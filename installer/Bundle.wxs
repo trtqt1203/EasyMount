@@ -1,0 +1,23 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <Bundle Name="EasyMount" Manufacturer="EasyMount" Version="0.3.2"
+          UpgradeCode="FA0D943D-3BDC-42C9-811C-90548F779661"
+          Compressed="yes" IconSourceFile="$(var.ProjectDir)\src\EasyMount\easymount.ico">
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication Theme="rtfLicense" LicenseFile="$(var.LicenseRtf)"
+                                             SuppressOptionsUI="yes" />
+    </BootstrapperApplication>
+    <Variable Name="LaunchTarget" Type="formatted" Value="[ProgramFiles64Folder]EasyMount\EasyMount.exe" />
+    <util:ProductSearch Id="FindWinFsp" UpgradeCode="{5466A3D8-3AA1-4240-B6A0-3A051940A3EC}"
+                        Result="version" Variable="WinFspVersion" />
+    <Chain>
+      <!-- WinFsp is shared: install/upgrade if needed, preserve it on app uninstall and rollback. -->
+      <MsiPackage Id="WinFsp" SourceFile="$(var.WinFspMsi)" Compressed="yes" Permanent="yes" Visible="yes"
+                  Vital="yes" InstallCondition="NOT WinFspVersion OR WinFspVersion &lt; v2.1.25156">
+        <MsiProperty Name="INSTALLLEVEL" Value="1" />
+      </MsiPackage>
+      <MsiPackage Id="EasyMountApp" SourceFile="$(var.AppMsi)" Compressed="yes" Vital="yes" />
+    </Chain>
+  </Bundle>
+</Wix>

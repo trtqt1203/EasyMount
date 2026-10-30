@@ -1,0 +1,19 @@
+PASS the modified priority engine is the tested executable
+PASS Windows mount support is compiled in
+PASS first file uses the highest-priority cloud
+PASS highest-priority source is filled before moving on
+PASS full first source spills to second source
+PASS file too large for remaining space moves intact to the next source
+PASS one union view lists files across every source
+PASS no fitting source rejects the write without creating a partial file
+PASS all-full result is explicit and never reports a successful upload
+PASS updating an existing file keeps it on its original account
+PASS changing configured priority changes the next new-file destination
+PASS duplicate file reads follow configured order
+PASS source already over its configured limit is skipped
+PASS copies inside the pool still use placement checks
+PASS automatic provider free-space queries preserve priority
+PASS unknown quota fails visibly instead of assuming unlimited free space
+PASS a user-defined capacity enables a backend that has no quota API
+PASS pool plans do not leak into nested union source configurations
+RESULT: 18 engine integration checks passed. No real cloud account or Windows drive was used.

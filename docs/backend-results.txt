@@ -1,0 +1,54 @@
+PASS bundled engine is available
+PASS first launch has no fabricated drive profiles
+PASS new drives default to read-only
+PASS Unicode display names and remote paths with spaces are valid
+PASS saved profile roundtrips all user configuration
+PASS duplicate drive letter is rejected
+PASS failed save preserves the previous configuration bytes
+PASS duplicate profile identity is rejected
+PASS option-shaped remote injection is rejected
+PASS system drive cannot be selected
+PASS control characters are rejected
+PASS corrupt JSON yields a recoverable configuration error
+PASS reading corrupt JSON never rewrites the original file
+PASS null profile records yield a recoverable configuration error
+PASS atomic saves leave no temporary profile files
+PASS pool persists ordered sources and per-folder capacities
+PASS pool display name can be changed without changing routing
+PASS pool engine receives a credential-free plan preserving priority and capacity settings
+PASS priority changes reorder both routes and their capacity limits
+PASS 1000 configured pool accounts are accepted without an account-count cap
+PASS duplicate pool accounts are rejected
+PASS pool paths cannot inject upstream read-only flags
+PASS pool folder cannot escape through parent path segments
+PASS routing edits are blocked while cached files may need recovery
+PASS display-name edits preserve cached upload routing
+PASS real rclone loopback WebDAV server starts
+PASS real engine lists configured account without dumping tokens
+PASS email display name preserves the internal remote used by mounted profiles
+PASS custom account name replaces the email and survives reload
+PASS account labels reject control characters
+PASS real engine tests a WebDAV directory containing spaces
+PASS unconfigured account surfaces a connection error
+PASS missing remote folder surfaces a connection error
+PASS connection testing rejects option injection
+PASS account names cannot collide with generated pool names
+PASS account setup rejects invalid configuration section names
+PASS missing app OAuth settings do not fabricate client credentials
+PASS app-level OAuth settings load only the expected client fields
+PASS invalid app OAuth JSON fails explicitly rather than using fabricated settings
+PASS native setup discovers the bundled provider catalog
+PASS configuration API rejects requests without its random session credentials
+PASS existing accounts cannot be overwritten by the setup wizard
+PASS native forms complete the real WebDAV state machine, including a password field
+PASS password answers are obscured before being stored by rclone
+PASS completed native account remains available after setup closes
+PASS matching display names never overwrite distinct authenticated accounts
+PASS incomplete setup remains a question instead of reporting success
+PASS cancelling removes only the newly created incomplete account
+PASS OAuth starts a local browser callback and reports progress without a console or real login
+PASS closing setup cancels a pending OAuth callback
+PASS cancelled OAuth does not leave an incomplete account in the configuration
+SKIP missing-driver check: WinFsp is already installed; tests do not create host mounts.
+PASS disconnecting an idle service completes safely
+RESULT: 52 checks passed. True mounted-drive I/O and Google/Microsoft OAuth require WinFsp and a user account; not exercised here.

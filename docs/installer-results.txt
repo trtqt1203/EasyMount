@@ -1,0 +1,31 @@
+PASS driver precedes app in the actual compiled bundle
+PASS shared WinFsp is preserved on app removal
+PASS same/newer WinFsp skips installation; older version upgrades
+PASS compiled detection uses the official WinFsp MSI UpgradeCode
+PASS all installation payloads are embedded for offline use
+PASS original WinFsp MSI is embedded
+PASS embedded WinFsp bytes match the official published SHA256
+PASS embedded WinFsp retains a valid official signature
+PASS EasyMount MSI is embedded
+PASS MSI contains EasyMount.exe
+PASS MSI payload matches current EasyMount.exe
+PASS MSI contains EasyMount.dll
+PASS MSI payload matches current EasyMount.dll
+PASS MSI contains rclone.exe
+PASS MSI payload matches current rclone.exe
+PASS MSI contains coreclr.dll
+PASS MSI payload matches current coreclr.dll
+PASS MSI contains oauth-clients.json
+PASS MSI payload matches current oauth-clients.json
+PASS MSI contains README.md
+PASS MSI payload matches current README.md
+PASS MSI contains WinFsp-License.txt
+PASS MSI payload matches current WinFsp-License.txt
+PASS MSI contains THIRD-PARTY-NOTICES.md
+PASS MSI payload matches current THIRD-PARTY-NOTICES.md
+PASS WinFsp corresponding source archive is included
+PASS WinFsp source archive matches the pinned v2.1 source
+PASS app targets 64-bit Program Files
+PASS Start Menu shortcut points to the installed app
+PASS no personal accounts or drive profiles are bundled
+RESULT: 30 installer checks passed. No app or driver was installed.

@@ -1,0 +1,33 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="EasyMount" Manufacturer="EasyMount" Version="0.3.2"
+           UpgradeCode="483B6FE6-C971-43BD-A700-37443EAD8F7F" Language="1033"
+           Scope="perMachine" InstallerVersion="500" Compressed="yes">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of EasyMount is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <Icon Id="AppIcon" SourceFile="$(var.ProjectDir)\src\EasyMount\easymount.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="EasyMount" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="EasyMount">
+        <Component Id="StartMenu" Guid="8B7A09B4-57CC-44F2-A332-BF580332C17A">
+          <Shortcut Id="StartMenuShortcut" Name="EasyMount" Target="[INSTALLFOLDER]EasyMount.exe"
+                    WorkingDirectory="INSTALLFOLDER" Icon="AppIcon" />
+          <RemoveFolder Id="RemoveStartMenuFolder" On="uninstall" />
+          <RegistryValue Root="HKLM" Key="Software\EasyMount" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+    <Feature Id="MainFeature" Title="EasyMount" Level="1">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentRef Id="StartMenu" />
+    </Feature>
+  </Package>
+  <Fragment>
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PayloadDir)\**" />
+    </ComponentGroup>
+  </Fragment>
+</Wix>

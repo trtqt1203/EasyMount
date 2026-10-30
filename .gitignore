@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+work/
+*.exe
+*.msi
+*.sha256
+*.user
+*.log
+rclone.conf
+drives.json
+
+# OAuth application identity is supplied locally for release builds.
+oauth-clients.json
+account-labels.json

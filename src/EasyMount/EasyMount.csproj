@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <ApplicationIcon>easymount.ico</ApplicationIcon>
+    <Version>0.3.2</Version>
+    <AssemblyTitle>EasyMount</AssemblyTitle>
+    <Description>Connect your cloud storage to Windows Explorer.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets/easymount.png" />
+  </ItemGroup>
+</Project>

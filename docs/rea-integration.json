@@ -1,0 +1,14 @@
+{
+  "requestedRepository": "https://github.com/AIshihzong/awesome-reverse-engineer-anything",
+  "requestedRepositoryKind": "CC0-1.0 curated resource list, no SKILL.md",
+  "resolvedSkillRepository": "https://github.com/morluto/rea",
+  "resolvedSkillPath": ".agents/skills/reverse-engineer-anything",
+  "commit": "c0c3902207d6b1a33709e42b80c7e570da7db964",
+  "license": "MIT",
+  "skillVersion": "55",
+  "installedPath": "C:\\Users\\Administrator\\.codex\\skills\\reverse-engineer-anything",
+  "installedFiles": 8,
+  "mcpRegistered": false,
+  "enginesInstalled": false,
+  "readyOnNextTurn": true
+}
