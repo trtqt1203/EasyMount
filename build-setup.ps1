@@ -88,8 +88,8 @@ $escaped = $licenseText.Replace('\', '\\').Replace('{', '\{').Replace('}', '\}')
 $licenseRtf = Join-Path $workRoot 'License.rtf'
 ('{\rtf1\ansi\deff0{\fonttbl{\f0 Segoe UI;}}\f0\fs18 ' + $escaped + '}') | Set-Content $licenseRtf -Encoding ascii
 
-$appMsi = Join-Path $workRoot 'EasyMount-0.3.2-x64.msi'
-$setup = Join-Path $projectRoot 'EasyMount-0.3.2-Setup.exe'
+$appMsi = Join-Path $workRoot 'EasyMount-0.3.4-x64.msi'
+$setup = Join-Path $projectRoot 'EasyMount-0.3.4-Setup.exe'
 & $wix build (Join-Path $projectRoot 'installer\Package.wxs') -arch x64 -d "ProjectDir=$projectRoot" -d "PayloadDir=$payload" -pdbtype none -o $appMsi
 if ($LASTEXITCODE -ne 0) { throw 'EasyMount MSI build failed.' }
 & $wix build (Join-Path $projectRoot 'installer\Bundle.wxs') -arch x64 -ext WixToolset.BootstrapperApplications.wixext -ext WixToolset.Util.wixext -d "ProjectDir=$projectRoot" -d "WinFspMsi=$winFspMsi" -d "AppMsi=$appMsi" -d "LicenseRtf=$licenseRtf" -pdbtype none -o $setup
@@ -98,7 +98,7 @@ if ($LASTEXITCODE -ne 0) { throw 'EasyMount bootstrapper build failed.' }
 $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
 "$hash  $([IO.Path]::GetFileName($setup))" | Set-Content ($setup + '.sha256') -Encoding ascii
 @{
-    version='0.3.2'; architecture='x64'; setup=[IO.Path]::GetFileName($setup); setupSha256=$hash
+    version='0.3.4'; architecture='x64'; setup=[IO.Path]::GetFileName($setup); setupSha256=$hash
     winFspVersion='2.1.25156'; winFspSource=$winFspUrl; winFspMsiSha256=$winFspHash
     winFspSignature=$signature.Status.ToString(); signer=$signature.SignerCertificate.Subject
     winFspSourceArchive=$sourceUrl; winFspSourceSha256=$sourceHash

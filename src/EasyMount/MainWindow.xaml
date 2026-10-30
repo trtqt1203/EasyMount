@@ -18,7 +18,7 @@
             <StackPanel><TextBlock Text="Gọn trên máy." FontWeight="SemiBold" FontSize="12"/><TextBlock Text="Truy cập file từ Explorer, tải nội dung khi cần." FontSize="11" Foreground="{StaticResource Muted}" Margin="0,6,0,0"/></StackPanel>
           </Border>
           <Button Content="Thoát ứng dụng" Click="QuitClick" Background="Transparent" HorizontalContentAlignment="Left" Padding="0,7" Foreground="{StaticResource Muted}"/>
-          <TextBlock Text="v0.3.2  ·  Windows x64" FontSize="10" Foreground="#718194" Margin="0,6,0,0"/>
+          <TextBlock Text="v0.3.4  ·  Windows x64" FontSize="10" Foreground="#718194" Margin="0,6,0,0"/>
         </StackPanel>
       </DockPanel>
     </Border>

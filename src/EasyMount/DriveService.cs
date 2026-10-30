@@ -243,9 +243,23 @@ public sealed class DriveService : IDisposable
         await RunAsync(new[] { "lsf", remote, "--max-depth", "1", "--dirs-only", "--retries", "1", "--low-level-retries", "1", "--contimeout", "10s", "--timeout", "20s" }, captureOutput: false);
     }
 
+    public async Task ValidateWriteAccessAsync(DriveProfile profile)
+    {
+        if (profile.ReadOnly) return;
+        var remotes = profile.IsPool ? profile.Sources.Select(s => s.Remote) : new[] { profile.Remote };
+        foreach (var remote in remotes)
+        {
+            var section = await RunAsync(new[] { "config", "redacted", remote[..remote.IndexOf(':')] });
+            if (Regex.IsMatch(section, @"(?m)^type\s*=\s*drive\s*$") &&
+                Regex.IsMatch(section, @"(?m)^scope\s*=\s*(?:https://www.googleapis.com/auth/)?drive\.readonly\s*$"))
+                throw new InvalidOperationException("Tài khoản Google Drive này chỉ được cấp quyền đọc. Hãy dùng ổ Chỉ đọc hoặc đăng nhập lại và cấp quyền tải lên/chỉnh sửa trước khi gắn ổ ghi.");
+        }
+    }
+
     public async Task TestProfileAsync(DriveProfile profile)
     {
         ValidateProfile(profile);
+        await ValidateWriteAccessAsync(profile);
         if (!profile.IsPool) { await TestRemoteAsync(profile.Remote); return; }
         foreach (var source in profile.Sources)
         {
@@ -296,6 +310,7 @@ public sealed class DriveService : IDisposable
         try
         {
             if (!RemoveMount(mount)) return; // An older process must not remove a newer connection.
+            DeleteSession(mount.ProfileId);
             mount.Client.Dispose();
             mount.Process.Dispose();
             Publish(mount.ProfileId, "Error", "Tiến trình ổ đĩa đã dừng. Tệp chưa tải lên (nếu có) vẫn được giữ trong bộ nhớ đệm; kết nối lại cùng cấu hình để phục hồi.");
@@ -305,10 +320,59 @@ public sealed class DriveService : IDisposable
 
     public bool IsConnected(string id) => mounts.TryGetValue(id, out var mount) && IsRunning(mount);
 
+    private static string NormalizeMountedRemote(string value) => Regex.Replace(value.Replace('\\', '/'), @"://\?/([A-Za-z]:/)", ":$1").TrimEnd('/');
+    private string SessionFile(string id) => Path.Combine(DataDirectory, "sessions", id + ".json");
+    private void DeleteSession(string id) { var file = SessionFile(id); if (File.Exists(file)) File.Delete(file); }
+    private static HttpClient Controller(int port, string secret)
+    {
+        var client = new HttpClient(new HttpClientHandler { UseProxy = false }) { BaseAddress = new Uri($"http://127.0.0.1:{port}/"), Timeout = TimeSpan.FromSeconds(8) };
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes("easymount:" + secret)));
+        return client;
+    }
+
+    public async Task RecoverMountsAsync()
+    {
+        await operationGate.WaitAsync();
+        try
+        {
+            foreach (var profile in LoadProfiles())
+            {
+                if (IsConnected(profile.Id) || !File.Exists(SessionFile(profile.Id))) continue;
+                Process? process = null; HttpClient? client = null;
+                try
+                {
+                    var lease = JsonSerializer.Deserialize<MountSession>(File.ReadAllText(SessionFile(profile.Id))) ?? throw new InvalidDataException();
+                    try { process = Process.GetProcessById(lease.ProcessId); }
+                    catch (ArgumentException) { DeleteSession(profile.Id); Publish(profile.Id, "Disconnected"); continue; }
+                    if (!lease.Matches(process, profile, RoutingIdentity(profile))) throw new InvalidDataException();
+                    client = Controller(lease.Port, lease.Secret());
+                    var mount = new Mount(process, client, profile.Id, profile.Letter, profile.ReadOnly) { Started = true };
+                    using var stats = await RcAsync(mount, "vfs/stats"); // Authenticate before taking control of a surviving process.
+                    if (stats.RootElement.GetProperty("opt").GetProperty("ReadOnly").GetBoolean() != lease.ReadOnly ||
+                        NormalizeMountedRemote(stats.RootElement.GetProperty("fs").GetString() ?? "") != NormalizeMountedRemote(MountRemote(profile)))
+                        throw new InvalidDataException();
+                    mounts[profile.Id] = mount;
+                    process.EnableRaisingEvents = true;
+                    process.Exited += (_, _) => { _ = HandleExitedAsync(mount); };
+                    process = null; client = null;
+                    Publish(profile.Id, "Connected", "Đã khôi phục quản lý phiên ổ đĩa còn chạy.");
+                }
+                catch
+                {
+                    // Preserve unverified state for manual recovery. Never kill a process based only on a saved PID.
+                    Publish(profile.Id, "Error", "Có phiên ổ đĩa cũ nhưng chưa xác minh được quyền điều khiển. Không tạo phiên trùng hoặc cưỡng bức ngắt; kiểm tra nhật ký và thử mở lại.");
+                }
+                finally { process?.Dispose(); client?.Dispose(); }
+            }
+        }
+        finally { operationGate.Release(); }
+    }
+
     public async Task ConnectAsync(DriveProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
         ObjectDisposedException.ThrowIf(disposed, this);
+        await RecoverMountsAsync();
         await operationGate.WaitAsync();
         Mount? mount = null;
         try
@@ -320,6 +384,8 @@ public sealed class DriveService : IDisposable
                 stale.Client.Dispose();
                 stale.Process.Dispose();
             }
+            if (File.Exists(SessionFile(profile.Id))) throw new IOException("Còn thông tin phiên cũ chưa xác minh. Không tạo kết nối trùng; kiểm tra hoặc phục hồi phiên trước.");
+            await ValidateWriteAccessAsync(profile);
             if (!HasRclone) throw new FileNotFoundException("Thiếu thành phần kết nối. Chạy lại bộ cài EasyMount.");
             if (!HasWinFsp) throw new InvalidOperationException("Cần cài WinFsp để tạo ổ đĩa Windows. Bấm Tải WinFsp trên màn hình chính để mở trang chính thức, cài xong rồi mở lại EasyMount.");
             if (DriveInfo.GetDrives().Any(drive => drive.Name.StartsWith(profile.Letter, StringComparison.OrdinalIgnoreCase)))
@@ -333,6 +399,7 @@ public sealed class DriveService : IDisposable
             var port = ((IPEndPoint)listener.LocalEndpoint).Port;
             listener.Stop();
             var secret = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
+            var protectedSecret = MountSession.Protect(secret);
             var args = new List<string>
             {
                 "mount", MountRemote(profile), profile.Letter,
@@ -340,18 +407,19 @@ public sealed class DriveService : IDisposable
                 "--vfs-cache-mode", "writes", "--vfs-write-back", "5s",
                 "--cache-dir", Path.Combine(DataDirectory, "cache", profile.Id),
                 "--log-file", Path.Combine(DataDirectory, "logs", profile.Id + ".log"),
-                "--log-level", "INFO", "--rc", "--rc-no-auth=false", "--rc-addr", "127.0.0.1:" + port,
-                "--rc-user", "easymount", "--rc-pass", secret
+                "--log-level", "INFO", "--rc", "--rc-no-auth=false", "--rc-addr", "127.0.0.1:" + port
             };
             if (profile.ReadOnly) args.Add("--read-only");
             var process = new Process { StartInfo = StartInfo(args), EnableRaisingEvents = true };
             foreach (var pair in PoolEnvironment(profile)) process.StartInfo.Environment[pair.Key] = pair.Value;
-            var client = new HttpClient(new HttpClientHandler { UseProxy = false }) { BaseAddress = new Uri($"http://127.0.0.1:{port}/"), Timeout = TimeSpan.FromSeconds(8) };
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes("easymount:" + secret)));
+            process.StartInfo.Environment["RCLONE_RC_USER"] = "easymount";
+            process.StartInfo.Environment["RCLONE_RC_PASS"] = secret;
+            var client = Controller(port, secret);
             mount = new Mount(process, client, profile.Id, profile.Letter, profile.ReadOnly);
             process.Start();
             mount.Started = true;
             mounts[profile.Id] = mount;
+            MountSession.Save(SessionFile(profile.Id), new MountSession(process.Id, process.StartTime.ToUniversalTime().Ticks, RclonePath, profile.Id, profile.Letter, profile.ReadOnly, RoutingIdentity(profile), port, protectedSecret));
             _ = ReadBoundedAsync(process.StandardOutput, 0);
             var startupError = ReadBoundedAsync(process.StandardError);
             process.Exited += (sender, args) => { _ = HandleExitedAsync(mount); };
@@ -412,6 +480,7 @@ public sealed class DriveService : IDisposable
             if (mount.Process.HasExited)
             {
                 RemoveMount(mount);
+                DeleteSession(profileId);
                 mount.Client.Dispose();
                 mount.Process.Dispose();
                 Publish(profileId, "Disconnected");
@@ -440,6 +509,12 @@ public sealed class DriveService : IDisposable
                 catch (HttpRequestException) { /* core/quit may close its HTTP connection before returning. */ }
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
                 await mount.Process.WaitForExitAsync(timeout.Token);
+                while (DriveInfo.GetDrives().Any(d => d.Name.StartsWith(mount.Letter, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (timeout.IsCancellationRequested) throw new IOException("Tiến trình đã dừng nhưng Windows chưa tháo ổ. Giữ cache và kiểm tra trước khi kết nối lại.");
+                    await Task.Delay(200);
+                }
+                DeleteSession(profileId);
                 mount.Client.Dispose();
                 mount.Process.Dispose();
                 Publish(profileId, "Disconnected");
@@ -477,7 +552,7 @@ public sealed class DriveService : IDisposable
     {
         disposed = true;
         // The window must await DisconnectAllAsync before Dispose. Never force-kill pending cloud writes here.
-        foreach (var pair in mounts.Where(x => x.Value.Process.HasExited).ToArray())
+        foreach (var pair in mounts.ToArray())
             if (mounts.TryRemove(pair.Key, out var mount)) { mount.Client.Dispose(); mount.Process.Dispose(); }
     }
 }

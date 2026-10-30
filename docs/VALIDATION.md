@@ -45,3 +45,22 @@ Kết quả raw ứng dụng và engine: `backend-results.txt`, `pool-results.tx
 - Đã kiểm tra Google about user(emailAddress) với phiên OAuth có sẵn: email hợp lệ, không in giá trị/token. Chưa kiểm tra email OneDrive/Dropbox thật.
 - Lỗi 403 quan sát trên trang Google xác định tài khoản trtqt1203@gmail.com chưa được cho phép trong chế độ Testing. Đây là hạn chế cấu hình Google OAuth; không thể bỏ hạn chế bằng cách đổi tên tài khoản trong app.
 - Trang tĩnh giới thiệu và privacy.html không dùng script phân tích, form đăng nhập hoặc phụ thuộc bên ngoài. Source công khai loại cấu hình OAuth cục bộ và tài khoản người dùng.
+
+## Bổ sung bản 0.3.3 — 31/10/2026
+
+- 63 kiểm tra đạt, gồm mount WinFsp thật bằng nguồn local dùng một lần: tạo ổ mạng, lưu DPAPI, nhận lại bằng service mới, từ chối timestamp sai và mật khẩu điều khiển sai, chặn ngắt khi còn cache upload, xác minh file đến backend local rồi ngắt sạch cả ổ lẫn session record.
+- Bấm X chuyển sang thoát an toàn; không còn mặc định ẩn cửa sổ. Callback exit không làm mất quyền điều khiển phiên khác. Worker mới nhận thông tin RC qua environment.
+- Chặn cấu hình ổ ghi Google nếu scope rõ ràng chỉ đọc. Điều này không thay thế quyền thực tế do nhà cung cấp kiểm soát.
+- Đã xác minh phiên R: cũ mồ côi: worker còn sống, OAuth chỉ đọc, một file chờ khoảng 16 MB liên tục bị lỗi thiếu scope. Đã tạo bản sao cục bộ kiểm tra SHA256 cho file đó và nhập thông tin controller bằng DPAPI vào đúng thư mục dữ liệu ban đầu, không dừng worker. Không đưa dữ liệu/credential phục hồi vào repo hay bộ cài.
+- Chưa cấp quyền ghi Google mới, chưa upload/xóa dữ liệu cloud thật trong kiểm thử này. Phiên cá nhân còn chờ cấp quyền ghi; không coi giữ cache hay nhận lại controller là bằng chứng upload thành công.
+
+- Đã cài bản 0.3.3 lên Program Files bằng Setup, exit code 0, không yêu cầu restart. Giao diện bản cài nhận lại ổ R: và hiển thị đúng 1 ổ đang kết nối cùng thông báo khôi phục quản lý phiên.
+
+## Bản triển khai cuối 0.3.4
+
+- Hoãn QuitAsync qua Dispatcher sau khi sự kiện Closing kết thúc để WPF không từ chối Show/Restore trong lúc đóng. Bản 0.3.3 cục bộ được thay bằng 0.3.4; không phát hành 0.3.3 làm bản cuối.
+- Setup 0.3.4 cài thành công (exit 0). Giao diện đã nhận lại R: thật, hiển thị v0.3.4 và 1 ổ đang kết nối.
+- Đã thử đóng cửa sổ bằng Alt+F4: hộp thoại báo còn file chờ upload, app vẫn mở và vẫn giữ đúng kết nối. Đã đóng hộp thoại, không dừng worker hoặc sửa cache.
+- 30 kiểm tra đóng gói bản 0.3.4 đạt; 63 kiểm tra backend và mount local áp dụng cho cùng mã DriveService/MountSession. Không claim upload Google thật đã thành công.
+
+- Đã kiểm tra bản cài với cấu hình trống riêng: Alt+F4 đóng cửa sổ và tiến trình thoát. Phiên R: thật vẫn chạy riêng trong cửa sổ phục hồi.

@@ -1,7 +1,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
-  <Bundle Name="EasyMount" Manufacturer="EasyMount" Version="0.3.2"
+  <Bundle Name="EasyMount" Manufacturer="EasyMount" Version="0.3.4"
           UpgradeCode="FA0D943D-3BDC-42C9-811C-90548F779661"
           Compressed="yes" IconSourceFile="$(var.ProjectDir)\src\EasyMount\easymount.ico">
     <BootstrapperApplication>

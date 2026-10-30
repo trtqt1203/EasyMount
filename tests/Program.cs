@@ -215,6 +215,65 @@ try
     Check((await service.ListRemotesAsync()).All(r => r.Name != "oauth_fixture"), "cancelled OAuth does not leave an incomplete account in the configuration");
     }
     else Console.WriteLine("SKIP 3 OAuth callback checks: port 53682 is in use; an existing user's login is preserved.");
+    if (service.HasWinFsp && args.Contains("--mounts"))
+    {
+        var mountRoot = Path.Combine(temporaryRoot, "mount recovery");
+        var localRoot = Path.Combine(temporaryRoot, "mount source"); Directory.CreateDirectory(localRoot);
+        var mountLetter = "ZYXWVUT".Select(c => c + ":").First(l => !DriveInfo.GetDrives().Any(d => d.Name.StartsWith(l, StringComparison.OrdinalIgnoreCase)));
+        var mountedProfile = new DriveProfile { Name = "EasyMount disposable recovery test", Letter = mountLetter, Remote = "mount_fixture:", ReadOnly = false };
+        var first = new DriveService(mountRoot, rclone);
+        Directory.CreateDirectory(mountRoot);
+        File.WriteAllText(first.ConfigPath, "[mount_fixture]\ntype = local\n" + "[readonly_fixture]\ntype = drive\nscope = drive.readonly\n");
+        mountedProfile.Remote += localRoot.Replace('\\', '/');
+        first.SaveProfiles(new[] { mountedProfile });
+        var onlyRead = new DriveProfile { Name = "readonly auth", Remote = "readonly_fixture:", Letter = mountLetter, ReadOnly = false };
+        await RejectAsync(() => first.ValidateWriteAccessAsync(onlyRead), typeof(InvalidOperationException), "writable mount rejects a read-only Google OAuth grant before creating a drive");
+        onlyRead.ReadOnly = true; await first.ValidateWriteAccessAsync(onlyRead);
+        Check(true, "read-only mounts retain support for read-only OAuth grants");
+        DriveService? recovered = null;
+        int? disposableMountPid = null;
+        try
+        {
+            await first.ConnectAsync(mountedProfile);
+            var leaseFile = Path.Combine(mountRoot, "sessions", mountedProfile.Id + ".json");
+            var lease = System.Text.Json.JsonSerializer.Deserialize<MountSession>(File.ReadAllText(leaseFile))!;
+            disposableMountPid = lease.ProcessId;
+            Check(!File.ReadAllText(leaseFile).Contains(lease.Secret()) && lease.Secret().Length > 20, "real mount persists Windows-protected controller credentials without plaintext");
+            Check(Directory.Exists(mountLetter + "\\"), "WinFsp creates a real disposable Windows network drive");
+            first.Dispose();
+            recovered = new DriveService(mountRoot, rclone);
+            var wrong = lease with { StartTicks = lease.StartTicks - 1 };
+            MountSession.Save(leaseFile, wrong);
+            await recovered.RecoverMountsAsync();
+            Check(!recovered.IsConnected(mountedProfile.Id), "recovery refuses a mismatched process creation time");
+            MountSession.Save(leaseFile, lease);
+            MountSession.Save(leaseFile, lease with { ProtectedSecret = MountSession.Protect("wrong-controller-secret") });
+            await recovered.RecoverMountsAsync();
+            Check(!recovered.IsConnected(mountedProfile.Id), "recovery rejects an unauthenticated controller without touching the worker");
+            MountSession.Save(leaseFile, lease);
+            await recovered.RecoverMountsAsync();
+            Check(recovered.IsConnected(mountedProfile.Id), "new service authenticates and recovers the surviving real mount");
+            File.WriteAllText(mountLetter + "\\pending.txt", "Disposable EasyMount pending upload fixture");
+            await RejectAsync(() => recovered.DisconnectAsync(mountedProfile.Id), typeof(IOException), "disconnect refuses a real pending cached upload");
+            Check(recovered.IsConnected(mountedProfile.Id), "pending-upload refusal preserves the running filesystem");
+            var deadline = DateTime.UtcNow.AddSeconds(20);
+            while (!File.Exists(Path.Combine(localRoot, "pending.txt")) && DateTime.UtcNow < deadline) await Task.Delay(250);
+            Check(File.ReadAllText(Path.Combine(localRoot, "pending.txt")) == "Disposable EasyMount pending upload fixture", "queued fixture is completely written to its local backend");
+            await Task.Delay(500);
+            await recovered.DisconnectAllAsync();
+            Check(!Directory.Exists(mountLetter + "\\") && !File.Exists(leaseFile), "safe disconnect removes real drive and recovery lease");
+        }
+        finally
+        {
+            recovered?.Dispose(); first.Dispose();
+            if (disposableMountPid is int fixturePid)
+            {
+                try { using var fixtureWorker = Process.GetProcessById(fixturePid); if (!fixtureWorker.HasExited && fixtureWorker.MainModule?.FileName == rclone) { fixtureWorker.Kill(); await fixtureWorker.WaitForExitAsync(); } }
+                catch (ArgumentException) { }
+            } // Disposable local-fixture worker only; never a personal cloud mount.
+
+        }
+    }
     if (!service.HasWinFsp)
     {
         var states = new List<DriveSnapshot>();
@@ -223,10 +282,10 @@ try
         Check(states.Any(s => s.ProfileId == profile.Id && s.Status == "Error" && s.Error!.Contains("WinFsp")) && !service.IsConnected(profile.Id),
             "mount prerequisite failure is visible and never marked connected");
     }
-    else Console.WriteLine("SKIP missing-driver check: WinFsp is already installed; tests do not create host mounts.");
+    else Console.WriteLine("SKIP missing-driver check: WinFsp is already installed; pass --mounts to run isolated local WinFsp checks.");
     await service.DisconnectAllAsync();
     Check(true, "disconnecting an idle service completes safely");
-    Console.WriteLine($"RESULT: {passed} checks passed. True mounted-drive I/O and Google/Microsoft OAuth require WinFsp and a user account; not exercised here.");
+    Console.WriteLine($"RESULT: {passed} checks passed. Local WinFsp mount tests requested: {args.Contains("--mounts")}. Google/Microsoft cloud writes are not exercised.");
 }
 finally
 {

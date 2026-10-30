@@ -4,7 +4,7 @@
 
 ## Cài đặt
 
-Mở `EasyMount-0.3.2-Setup.exe`, chọn Install và chấp thuận quyền quản trị để cài ứng dụng cùng WinFsp khi cần. Bộ cài chứa sẵn thành phần kết nối và WinFsp; không cần tải thêm khi cài. Mở EasyMount từ Start Menu. Nếu Windows yêu cầu khởi động lại để hoàn tất driver, thực hiện trước khi kết nối ổ.
+Mở `EasyMount-0.3.4-Setup.exe`, chọn Install và chấp thuận quyền quản trị để cài ứng dụng cùng WinFsp khi cần. Bộ cài chứa sẵn thành phần kết nối và WinFsp; không cần tải thêm khi cài. Mở EasyMount từ Start Menu. Nếu Windows yêu cầu khởi động lại để hoàn tất driver, thực hiện trước khi kết nối ổ.
 
 Chỉ phát hành bản Setup. Thư mục payload do build tạo ra trong `work/` chỉ phục vụ đóng gói và kiểm thử, không phải bản portable để phân phối.
 
@@ -20,7 +20,7 @@ Chỉ phát hành bản Setup. Thư mục payload do build tạo ra trong `work/
 
 Google Drive cần OAuth client riêng để sử dụng ổn định: client dùng chung của rclone đang được ngừng trong năm 2026. Khi bản build chưa được cấu hình OAuth của EasyMount, giao diện sẽ hướng dẫn nhập Client ID và Client Secret. Nguồn chính thức: https://rclone.org/drive/#making-your-own-client-id . Không coi việc có giao diện đăng nhập là bằng chứng đã xác thực thành công bằng tài khoản thật.
 
-Bản 0.3.2 đã có OAuth client Desktop riêng của EasyMount trong `oauth-clients.json`; không cần nhập Client ID/Secret khi thêm Google Drive. File này chỉ chứa định danh ứng dụng, không chứa token, mật khẩu hoặc cấu hình tài khoản người dùng. Đây là public client của ứng dụng Desktop; không dùng client secret đi kèm như mật khẩu bảo vệ một dịch vụ máy chủ.
+Bản 0.3.4 đã có OAuth client Desktop riêng của EasyMount trong `oauth-clients.json`; không cần nhập Client ID/Secret khi thêm Google Drive. File này chỉ chứa định danh ứng dụng, không chứa token, mật khẩu hoặc cấu hình tài khoản người dùng. Đây là public client của ứng dụng Desktop; không dùng client secret đi kèm như mật khẩu bảo vệ một dịch vụ máy chủ.
 
 OAuth Google hiện ở trạng thái **External / Testing**, chỉ dành cho tài khoản trong danh sách tester; tối đa 100 tester và refresh token cho quyền Drive hết hạn sau 7 ngày. Bản này chưa phải đăng nhập công khai đã được Google xét duyệt. Muốn phát hành rộng rãi cần hoàn thiện branding, trang chủ/chính sách riêng tư trên miền đã xác minh và quy trình xét duyệt phạm vi Drive. Chi tiết: `docs/OAUTH-SETUP.md`; [giới hạn Testing của Google](https://support.google.com/cloud/answer/15549945?hl=en).
 
@@ -47,11 +47,11 @@ Các thư mục cùng tên được hiển thị chung. Nếu nhiều nguồn đ
 - Ngắt kết nối, chọn **Sửa**, đổi tên rồi lưu và kết nối lại. Tên mới được dùng làm nhãn ổ trong Explorer. Đổi tên không đổi tài khoản, thứ tự hoặc khóa phục hồi cache.
 - Có thể đổi thứ tự và nguồn khi ổ đã ngắt và không còn cache cần giữ. Bản 0.2 chặn đổi/xóa nguồn nếu thư mục cache vẫn có file để tránh chuyển nhầm dữ liệu chờ upload. Kết nối bằng cấu hình cũ để hoàn tất phục hồi; chỉ dọn cache sau khi xác minh dữ liệu đã có trên cloud.
 - Trước khi ngắt ổ ghi, đóng các file đang mở và chờ upload hoàn tất. Không xóa cache có dữ liệu chưa tải lên.
-- Đóng cửa sổ sẽ thu về khay hệ thống. Dùng **Thoát ứng dụng** để ngắt ổ và thoát.
+- Bấm **X** hoặc **Thoát ứng dụng** để kiểm tra upload, ngắt ổ và thoát. Nếu còn file chờ hoặc lỗi upload, app giữ kết nối và báo lý do. Dùng nút thu nhỏ nếu muốn giữ ổ hoạt động.
 - Tự kết nối chỉ áp dụng khi mở EasyMount, không tự đăng ký chạy cùng Windows.
 - Đây là truy cập cloud theo nhu cầu, không phải một bản sao ngoại tuyến đầy đủ.
 
-Cấu hình nằm ở `%LOCALAPPDATA%\EasyMount`: `drives.json`, `rclone.conf`, `pools`, `logs`, `cache`. `rclone.conf` có thể chứa token. Không đưa cấu hình cá nhân vào repo.
+Cấu hình nằm ở `%LOCALAPPDATA%\EasyMount`: `drives.json`, `rclone.conf`, `pools`, `logs`, `cache`, `sessions`. `rclone.conf` có thể chứa token. Không đưa cấu hình cá nhân vào repo.
 
 ## Build và kiểm tra
 
@@ -80,3 +80,11 @@ Xem `docs/VALIDATION.md` về kiểm chứng và phần chưa được thử. T�
 - Chính sách riêng tư: https://trtqt1203.github.io/EasyMount/privacy.html
 
 Source công khai dùng `oauth-clients.example.json` trống nếu không có file cấu hình OAuth cục bộ. Sao chép thành `oauth-clients.json` và điền định danh client riêng trước khi build bản phát hành có đăng nhập Google được cấu hình sẵn. Không commit file đó, token, rclone.conf, drives.json hoặc account-labels.json. Bộ cài phát hành chính thức được build với định danh ứng dụng riêng của EasyMount; tài khoản người dùng vẫn phải được Google cho phép và tự cấp quyền.
+
+## Khôi phục phiên mount (0.3.4)
+
+Khi mở lại, EasyMount nhận lại phiên rclone còn sống bằng PID, thời gian tạo tiến trình, đường dẫn executable, cấu hình nguồn và xác thực loopback. Mật khẩu điều khiển phiên được Windows DPAPI bảo vệ theo người dùng; không đặt trên dòng lệnh của worker mới. Không tự giết tiến trình lạ hoặc bỏ qua hàng đợi upload.
+
+Sau khi gửi lệnh thoát, app chờ tiến trình dừng và Windows gỡ ổ trước khi báo ngắt xong. Nếu app bị End Task/mất điện, cache và thông tin phiên vẫn được giữ; quá trình khôi phục cần đúng tài khoản Windows và thư mục dữ liệu ban đầu. Phiên cũ trước 0.3.4 không tự có thông tin khôi phục; cần xác minh trước khi nhập lại.
+
+Ổ ghi Google Drive bị chặn nếu cấu hình chỉ có scope drive.readonly. Muốn ghi cần đăng nhập/cấp quyền ghi đúng tài khoản, không chỉ bỏ chọn Chỉ đọc ở cấu hình ổ.

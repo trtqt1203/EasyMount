@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$SetupPath = (Join-Path $PSScriptRoot '..\EasyMount-0.3.2-Setup.exe'),
+    [string]$SetupPath = (Join-Path $PSScriptRoot '..\EasyMount-0.3.4-Setup.exe'),
     [string]$WixPath = 'wix',
     [string]$AppPayloadDirectory = (Join-Path (Get-Location) 'work\easymount-build\app'),
     [string]$WorkDirectory = (Join-Path (Get-Location) 'work\installer-check')
@@ -35,7 +35,7 @@ Check ($driver.Count -eq 1) 'original WinFsp MSI is embedded'
 Check ((Get-FileHash $driver[0].FullName -Algorithm SHA256).Hash -eq '073A70E00F77423E34BED98B86E600DEF93393BA5822204FAC57A29324DB9F7A') 'embedded WinFsp bytes match the official published SHA256'
 $sig = Get-AuthenticodeSignature $driver[0].FullName
 Check ($sig.Status -eq 'Valid' -and $sig.SignerCertificate.Subject -match 'O=NAVIMATICS LLC,') 'embedded WinFsp retains a valid official signature'
-$app = @(Get-ChildItem $content -Recurse -File -Filter 'EasyMount-0.3.2-x64.msi')
+$app = @(Get-ChildItem $content -Recurse -File -Filter 'EasyMount-0.3.4-x64.msi')
 Check ($app.Count -eq 1) 'EasyMount MSI is embedded'
 $extracted = Join-Path $checkRoot 'msi'
 $wxs = Join-Path $checkRoot 'app.wxs'

@@ -49,6 +49,17 @@ PASS cancelling removes only the newly created incomplete account
 PASS OAuth starts a local browser callback and reports progress without a console or real login
 PASS closing setup cancels a pending OAuth callback
 PASS cancelled OAuth does not leave an incomplete account in the configuration
-SKIP missing-driver check: WinFsp is already installed; tests do not create host mounts.
+PASS writable mount rejects a read-only Google OAuth grant before creating a drive
+PASS read-only mounts retain support for read-only OAuth grants
+PASS real mount persists Windows-protected controller credentials without plaintext
+PASS WinFsp creates a real disposable Windows network drive
+PASS recovery refuses a mismatched process creation time
+PASS recovery rejects an unauthenticated controller without touching the worker
+PASS new service authenticates and recovers the surviving real mount
+PASS disconnect refuses a real pending cached upload
+PASS pending-upload refusal preserves the running filesystem
+PASS queued fixture is completely written to its local backend
+PASS safe disconnect removes real drive and recovery lease
+SKIP missing-driver check: WinFsp is already installed; pass --mounts to run isolated local WinFsp checks.
 PASS disconnecting an idle service completes safely
-RESULT: 52 checks passed. True mounted-drive I/O and Google/Microsoft OAuth require WinFsp and a user account; not exercised here.
+RESULT: 63 checks passed. Local WinFsp mount tests requested: True. Google/Microsoft cloud writes are not exercised.

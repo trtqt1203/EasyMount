@@ -42,6 +42,7 @@ public partial class MainWindow : Window
         Loaded += async (_, _) =>
         {
             ApplyDarkTitle();
+            await RunAsync(() => service.RecoverMountsAsync(), "Đã kiểm tra và khôi phục các phiên ổ còn chạy.");
             if (!service.HasRclone) StatusText.Text = "Thiếu thành phần kết nối. Chạy lại bộ cài EasyMount để khôi phục.";
             if (canSave && service.HasWinFsp && Rows.Any(r => r.Profile.AutoConnect))
                 await RunAsync(async () => { foreach (var row in Rows.Where(r => r.Profile.AutoConnect)) { try { await service.ConnectAsync(row.Profile); } catch (Exception ex) { row.Update(new(row.Profile.Id, "Error", ex.Message)); } } }, "Đã xử lý các ổ tự kết nối.");
@@ -129,8 +130,8 @@ public partial class MainWindow : Window
     {
         if (exiting) return;
         e.Cancel = true;
-        Hide();
-        tray.ShowBalloonTip(2500, "EasyMount vẫn đang chạy", "Mở lại từ khay hệ thống. Chọn Thoát để ngắt các ổ và đóng ứng dụng.", Forms.ToolTipIcon.Info);
+        if (!busy) Dispatcher.BeginInvoke(new Action(async () => await QuitAsync()));
+        else Restore();
     }
     private async void QuitClick(object sender, RoutedEventArgs e) => await QuitAsync();
     private async Task QuitAsync()
