@@ -14,3 +14,7 @@ oauth-clients.json
 account-labels.json
 
 sessions/
+
+runtime-roots.json
+uninstall.pending
+uninstall-blocked.txt

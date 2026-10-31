@@ -10,9 +10,16 @@ namespace EasyMount;
 public partial class App : System.Windows.Application
 {
     private Mutex? singleInstance;
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length == 2 && e.Args[0] == "--prepare-uninstall" && int.TryParse(e.Args[1], out var uiLevel))
+        {
+            var result = await UninstallSupport.RunAsync(Environment.ProcessPath!, uiLevel >= 3 ? message => MessageBox.Show(message, "EasyMount", MessageBoxButton.OK, MessageBoxImage.Information) : null);
+            Shutdown(result); return;
+        }
+        try { UninstallSupport.EnsureNotUninstalling(); }
+        catch (Exception ex) { MessageBox.Show(ex.Message, "EasyMount"); Shutdown(1); return; }
         string? dataDirectory = null;
         if (e.Args.Length > 0)
         {
@@ -31,7 +38,11 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
-        try { MainWindow = new MainWindow(dataDirectory); MainWindow.Show(); }
+        try
+        {
+            UninstallSupport.RegisterRoot(dataDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EasyMount"));
+            MainWindow = new MainWindow(dataDirectory); MainWindow.Show();
+        }
         catch (Exception ex)
         {
             MessageBox.Show("Không thể mở EasyMount: " + ex.Message, "EasyMount");

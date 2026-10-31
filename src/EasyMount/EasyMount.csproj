@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <ApplicationIcon>easymount.ico</ApplicationIcon>
-    <Version>0.3.4</Version>
+    <Version>0.3.5</Version>
     <AssemblyTitle>EasyMount</AssemblyTitle>
     <Description>Connect your cloud storage to Windows Explorer.</Description>
   </PropertyGroup>

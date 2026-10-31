@@ -64,3 +64,11 @@ Kết quả raw ứng dụng và engine: `backend-results.txt`, `pool-results.tx
 - 30 kiểm tra đóng gói bản 0.3.4 đạt; 63 kiểm tra backend và mount local áp dụng cho cùng mã DriveService/MountSession. Không claim upload Google thật đã thành công.
 
 - Đã kiểm tra bản cài với cấu hình trống riêng: Alt+F4 đóng cửa sổ và tiến trình thoát. Phiên R: thật vẫn chạy riêng trong cửa sổ phục hồi.
+
+## Bổ sung 0.3.5 — uninstall tự ngắt ổ
+
+- Helper MSI chạy đồng bộ trước InstallValidate, trả lỗi để dừng gỡ nếu chưa ngắt an toàn. App đang chạy nhận yêu cầu qua named pipe cùng người dùng; phiên không còn app được tìm qua runtime-roots.json và phục hồi có xác thực.
+- Đã kiểm thử uninstall MSI trực tiếp bị chặn khi pending, cả khi app sống và app đã dừng. Đã kiểm thử ngắt orphan sau upload local hoàn tất; gỡ bằng Setup khi app đang chạy thành công rồi cài lại. WinFsp/cấu hình được giữ và đối chiếu hash. Chi tiết: SAFE-UNINSTALL.md và uninstall-integration-results.json.
+- 65 kiểm tra backend/mount, 33 kiểm tra package tĩnh đạt. Không dùng dữ liệu cloud cá nhân trong các bài thử gỡ.
+
+- Sau khi cài lại, đã đọc giao diện Windows thật: v0.3.5, 0 ổ đang kết nối và engine sẵn sàng. Đã đóng cửa sổ thử, tiến trình thoát.

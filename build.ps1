@@ -26,7 +26,7 @@ $oauthClients = Join-Path $projectRoot 'oauth-clients.json'
 if (-not (Test-Path -LiteralPath $oauthClients)) { $oauthClients = Join-Path $projectRoot 'oauth-clients.example.json' }
 Copy-Item -LiteralPath $oauthClients -Destination (Join-Path $payload 'oauth-clients.json') -Force
 @{
-    appVersion='0.3.4'; engineVersion='v1.75.2-easymount.1'; engineSha256=(Get-FileHash $EnginePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    appVersion='0.3.5'; engineVersion='v1.75.2-easymount.1'; engineSha256=(Get-FileHash $EnginePath -Algorithm SHA256).Hash.ToLowerInvariant()
     upstream='https://github.com/rclone/rclone/tree/v1.75.2'; overlay='engine/priority.go and engine/apply-overlay.ps1'; distribution='Setup only'
 } | ConvertTo-Json | Set-Content (Join-Path $projectRoot 'docs\BUILD.json') -Encoding utf8
 Write-Host "Internal installer payload: $payload"

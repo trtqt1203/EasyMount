@@ -372,6 +372,7 @@ public sealed class DriveService : IDisposable
     {
         ArgumentNullException.ThrowIfNull(profile);
         ObjectDisposedException.ThrowIf(disposed, this);
+        UninstallSupport.EnsureNotUninstalling();
         await RecoverMountsAsync();
         await operationGate.WaitAsync();
         Mount? mount = null;
@@ -534,6 +535,29 @@ public sealed class DriveService : IDisposable
             }
         }
         finally { operationGate.Release(); }
+    }
+
+    public async Task PrepareUninstallAsync()
+    {
+        var sessions = Path.Combine(DataDirectory, "sessions");
+        if (Directory.Exists(sessions) && Directory.EnumerateFiles(sessions, "*.json").Any())
+        {
+            await RecoverMountsAsync();
+            foreach (var file in Directory.EnumerateFiles(sessions, "*.json"))
+                if (!mounts.ContainsKey(Path.GetFileNameWithoutExtension(file)))
+                    throw new IOException("Có phiên ổ đĩa cũ chưa xác minh được; giữ ứng dụng để phục hồi trước khi gỡ.");
+        }
+        // Check all recovered VFS instances, including read-only mounts with older cached writes.
+        foreach (var mount in mounts.Values)
+        {
+            if (!IsRunning(mount)) continue;
+            using var stats = await RcAsync(mount, "vfs/stats");
+            var cache = stats.RootElement.GetProperty("diskCache");
+            foreach (var key in new[] { "uploadsInProgress", "uploadsQueued", "erroredFiles" })
+                if (!cache.TryGetProperty(key, out var value) || !value.TryGetInt64(out var count) || count != 0)
+                    throw new IOException("Còn file đang tải lên, chờ tải hoặc gặp lỗi. Chờ upload xong rồi gỡ lại; ứng dụng và cache được giữ nguyên.");
+        }
+        await DisconnectAllAsync();
     }
 
     public async Task DisconnectAllAsync()

@@ -4,7 +4,7 @@
 
 ## Cài đặt
 
-Mở `EasyMount-0.3.4-Setup.exe`, chọn Install và chấp thuận quyền quản trị để cài ứng dụng cùng WinFsp khi cần. Bộ cài chứa sẵn thành phần kết nối và WinFsp; không cần tải thêm khi cài. Mở EasyMount từ Start Menu. Nếu Windows yêu cầu khởi động lại để hoàn tất driver, thực hiện trước khi kết nối ổ.
+Mở `EasyMount-0.3.5-Setup.exe`, chọn Install và chấp thuận quyền quản trị để cài ứng dụng cùng WinFsp khi cần. Bộ cài chứa sẵn thành phần kết nối và WinFsp; không cần tải thêm khi cài. Mở EasyMount từ Start Menu. Nếu Windows yêu cầu khởi động lại để hoàn tất driver, thực hiện trước khi kết nối ổ.
 
 Chỉ phát hành bản Setup. Thư mục payload do build tạo ra trong `work/` chỉ phục vụ đóng gói và kiểm thử, không phải bản portable để phân phối.
 
@@ -20,7 +20,7 @@ Chỉ phát hành bản Setup. Thư mục payload do build tạo ra trong `work/
 
 Google Drive cần OAuth client riêng để sử dụng ổn định: client dùng chung của rclone đang được ngừng trong năm 2026. Khi bản build chưa được cấu hình OAuth của EasyMount, giao diện sẽ hướng dẫn nhập Client ID và Client Secret. Nguồn chính thức: https://rclone.org/drive/#making-your-own-client-id . Không coi việc có giao diện đăng nhập là bằng chứng đã xác thực thành công bằng tài khoản thật.
 
-Bản 0.3.4 đã có OAuth client Desktop riêng của EasyMount trong `oauth-clients.json`; không cần nhập Client ID/Secret khi thêm Google Drive. File này chỉ chứa định danh ứng dụng, không chứa token, mật khẩu hoặc cấu hình tài khoản người dùng. Đây là public client của ứng dụng Desktop; không dùng client secret đi kèm như mật khẩu bảo vệ một dịch vụ máy chủ.
+Bản 0.3.5 đã có OAuth client Desktop riêng của EasyMount trong `oauth-clients.json`; không cần nhập Client ID/Secret khi thêm Google Drive. File này chỉ chứa định danh ứng dụng, không chứa token, mật khẩu hoặc cấu hình tài khoản người dùng. Đây là public client của ứng dụng Desktop; không dùng client secret đi kèm như mật khẩu bảo vệ một dịch vụ máy chủ.
 
 OAuth Google hiện ở trạng thái **External / Testing**, chỉ dành cho tài khoản trong danh sách tester; tối đa 100 tester và refresh token cho quyền Drive hết hạn sau 7 ngày. Bản này chưa phải đăng nhập công khai đã được Google xét duyệt. Muốn phát hành rộng rãi cần hoàn thiện branding, trang chủ/chính sách riêng tư trên miền đã xác minh và quy trình xét duyệt phạm vi Drive. Chi tiết: `docs/OAUTH-SETUP.md`; [giới hạn Testing của Google](https://support.google.com/cloud/answer/15549945?hl=en).
 
@@ -81,10 +81,10 @@ Xem `docs/VALIDATION.md` về kiểm chứng và phần chưa được thử. T�
 
 Source công khai dùng `oauth-clients.example.json` trống nếu không có file cấu hình OAuth cục bộ. Sao chép thành `oauth-clients.json` và điền định danh client riêng trước khi build bản phát hành có đăng nhập Google được cấu hình sẵn. Không commit file đó, token, rclone.conf, drives.json hoặc account-labels.json. Bộ cài phát hành chính thức được build với định danh ứng dụng riêng của EasyMount; tài khoản người dùng vẫn phải được Google cho phép và tự cấp quyền.
 
-## Khôi phục phiên mount (0.3.4)
+## Khôi phục phiên mount (0.3.5)
 
 Khi mở lại, EasyMount nhận lại phiên rclone còn sống bằng PID, thời gian tạo tiến trình, đường dẫn executable, cấu hình nguồn và xác thực loopback. Mật khẩu điều khiển phiên được Windows DPAPI bảo vệ theo người dùng; không đặt trên dòng lệnh của worker mới. Không tự giết tiến trình lạ hoặc bỏ qua hàng đợi upload.
 
-Sau khi gửi lệnh thoát, app chờ tiến trình dừng và Windows gỡ ổ trước khi báo ngắt xong. Nếu app bị End Task/mất điện, cache và thông tin phiên vẫn được giữ; quá trình khôi phục cần đúng tài khoản Windows và thư mục dữ liệu ban đầu. Phiên cũ trước 0.3.4 không tự có thông tin khôi phục; cần xác minh trước khi nhập lại.
+Sau khi gửi lệnh thoát, app chờ tiến trình dừng và Windows gỡ ổ trước khi báo ngắt xong. Nếu app bị End Task/mất điện, cache và thông tin phiên vẫn được giữ; quá trình khôi phục cần đúng tài khoản Windows và thư mục dữ liệu ban đầu. Phiên cũ trước 0.3.5 không tự có thông tin khôi phục; cần xác minh trước khi nhập lại.
 
 Ổ ghi Google Drive bị chặn nếu cấu hình chỉ có scope drive.readonly. Muốn ghi cần đăng nhập/cấp quyền ghi đúng tài khoản, không chỉ bỏ chọn Chỉ đọc ở cấu hình ổ.

@@ -246,6 +246,7 @@ try
             MountSession.Save(leaseFile, wrong);
             await recovered.RecoverMountsAsync();
             Check(!recovered.IsConnected(mountedProfile.Id), "recovery refuses a mismatched process creation time");
+            await RejectAsync(() => recovered.PrepareUninstallAsync(), typeof(IOException), "uninstall refuses an unverified surviving session instead of deleting the app");
             MountSession.Save(leaseFile, lease);
             MountSession.Save(leaseFile, lease with { ProtectedSecret = MountSession.Protect("wrong-controller-secret") });
             await recovered.RecoverMountsAsync();
@@ -255,12 +256,13 @@ try
             Check(recovered.IsConnected(mountedProfile.Id), "new service authenticates and recovers the surviving real mount");
             File.WriteAllText(mountLetter + "\\pending.txt", "Disposable EasyMount pending upload fixture");
             await RejectAsync(() => recovered.DisconnectAsync(mountedProfile.Id), typeof(IOException), "disconnect refuses a real pending cached upload");
+            await RejectAsync(() => recovered.PrepareUninstallAsync(), typeof(IOException), "uninstall preflight preserves a real pending upload");
             Check(recovered.IsConnected(mountedProfile.Id), "pending-upload refusal preserves the running filesystem");
             var deadline = DateTime.UtcNow.AddSeconds(20);
             while (!File.Exists(Path.Combine(localRoot, "pending.txt")) && DateTime.UtcNow < deadline) await Task.Delay(250);
             Check(File.ReadAllText(Path.Combine(localRoot, "pending.txt")) == "Disposable EasyMount pending upload fixture", "queued fixture is completely written to its local backend");
             await Task.Delay(500);
-            await recovered.DisconnectAllAsync();
+            await recovered.PrepareUninstallAsync();
             Check(!Directory.Exists(mountLetter + "\\") && !File.Exists(leaseFile), "safe disconnect removes real drive and recovery lease");
         }
         finally

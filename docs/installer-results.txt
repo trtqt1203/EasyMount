@@ -28,4 +28,7 @@ PASS WinFsp source archive matches the pinned v2.1 source
 PASS app targets 64-bit Program Files
 PASS Start Menu shortcut points to the installed app
 PASS no personal accounts or drive profiles are bundled
-RESULT: 30 installer checks passed. No app or driver was installed.
+PASS compiled MSI invokes installed safe-unmount helper
+PASS uninstall requires a successful synchronous helper result
+PASS safe-unmount action is conditioned on actual app removal
+RESULT: 33 installer checks passed. No app or driver was installed.

@@ -16,6 +16,7 @@ public partial class MainWindow : Window
 {
     private readonly DriveService service;
     private readonly Forms.NotifyIcon tray;
+    private readonly UninstallSupport uninstall;
     private bool busy, exiting, canSave = true;
     public ObservableCollection<DriveRow> Rows { get; } = new();
 
@@ -39,6 +40,10 @@ public partial class MainWindow : Window
         try { foreach (var p in service.LoadProfiles()) Rows.Add(new DriveRow(p)); }
         catch (Exception ex) { canSave = false; StatusText.Text = "Không thể đọc cấu hình: " + ex.Message; }
         RefreshSummary();
+        uninstall = new UninstallSupport(
+            () => Dispatcher.InvokeAsync(PrepareForUninstallAsync).Task.Unwrap(),
+            () => Dispatcher.BeginInvoke(new Action(FinishExit)));
+        Closed += (_, _) => uninstall.Dispose();
         Loaded += async (_, _) =>
         {
             ApplyDarkTitle();
@@ -141,12 +146,22 @@ public partial class MainWindow : Window
         await RunAsync(async () =>
         {
             await service.DisconnectAllAsync();
-            exiting = true;
-            tray.Visible = false;
-            tray.Dispose();
-            service.Dispose();
-            System.Windows.Application.Current.Shutdown();
+            FinishExit();
         }, "Đã đóng.");
+    }
+    private async Task<string?> PrepareForUninstallAsync()
+    {
+        if (busy || OwnedWindows.Count > 0) return "Đóng cửa sổ cấu hình và chờ thao tác hiện tại hoàn tất trước khi gỡ.";
+        busy = true; IsEnabled = false;
+        StatusText.Text = "Đang ngắt ổ an toàn trước khi gỡ ứng dụng…";
+        try { await service.PrepareUninstallAsync(); return null; }
+        catch (Exception ex) { StatusText.Text = ex.Message; return ex.Message; }
+        finally { busy = false; IsEnabled = true; RefreshSummary(); }
+    }
+    private void FinishExit()
+    {
+        exiting = true; tray.Visible = false; tray.Dispose(); service.Dispose();
+        System.Windows.Application.Current.Shutdown();
     }
     private void ApplyDarkTitle() { int enabled = 1; try { DwmSetWindowAttribute(new WindowInteropHelper(this).Handle, 20, ref enabled, sizeof(int)); } catch { } }
     [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
