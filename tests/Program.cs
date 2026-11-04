@@ -6,6 +6,7 @@ using EasyMount;
 var appRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
 var rclone = args.Length > 0 ? Path.GetFullPath(args[0]) : throw new ArgumentException("Pass the internal build engine path.");
 if (!File.Exists(rclone)) throw new FileNotFoundException("Pass the bundled rclone.exe path as the first argument.", rclone);
+await ReleaseClientChecks.RunAsync(args.Contains("--api-test"));
 
 var temporaryRoot = Path.Combine(Path.GetTempPath(), "EasyMount-checks-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(temporaryRoot);
@@ -15,6 +16,67 @@ void Check(bool value, string description)
     if (!value) throw new Exception("FAILED: " + description);
     Console.WriteLine("PASS " + description);
     passed++;
+}
+Check(DriveProfile.ResolveName("  Tài liệu  ", Array.Empty<DriveProfile>()) == "Tài liệu", "custom drive name is preserved and trimmed");
+Check(DriveProfile.ResolveName(" ", new[] { new DriveProfile { Name="drive1" }, new DriveProfile { Name="Drive3" } }) == "Drive2", "blank drive names use first available Drive number without case collisions");
+var renamed = new DriveProfile {Name="Drive1"};
+Check(DriveProfile.ResolveName("",new[]{renamed},renamed.Id)=="Drive1", "blank rename excludes its own previous default name");
+var childA = new DriveProfile{Name="Ảnh",Remote="alpha:"};
+var childB = new DriveProfile{Name="Phim",Remote="beta:"};
+var testPool = new DriveProfile{Name="Drive chung",Sources=new(){new(){Remote="alpha:"},new(){Remote="beta:"}}};
+Check(DrivePresentation.ChildNames(testPool,new[]{childA,childB},Array.Empty<RemoteAccount>()).SequenceEqual(new[]{"Ảnh","Phim"}),"pooled subtitle uses user drive names in source order");
+var capA=new DriveCapacity(10,100,DateTime.Now);var capB=new DriveCapacity(20,200,DateTime.Now);var capPool=new DriveCapacity(30,300,DateTime.Now);
+Check(DrivePresentation.WorkspaceCapacity(new[]{(childA,(DriveCapacity?)capA),(childB,capB),(testPool,capPool)}) is {UsedBytes:30,TotalBytes:300},"workspace storage excludes duplicate pool and member quotas");
+Check(DrivePresentation.WorkspaceCapacity(new[]{(childA,(DriveCapacity?)capA),(childB,null),(testPool,capPool)}) is {UsedBytes:30,TotalBytes:300},"pool capacity can cover a member with no separate quota");
+Check(DrivePresentation.WorkspaceCapacity(new[]{(childA,(DriveCapacity?)capA),(childB,null)}) is null,"missing source quota is unknown rather than a fabricated workspace total");
+var workspaceFile=Path.Combine(temporaryRoot,"workspaces.json");
+var appearanceFile=Path.Combine(temporaryRoot,"appearance-settings.json");
+var appearance=DesktopSettings.Load(appearanceFile);
+Check(appearance.Language=="en" && appearance.Theme=="dark","new app preferences default to English and dark appearance");
+File.WriteAllText(appearanceFile,"{\"AutoConnect\":false,\"RetrySeconds\":300}");
+appearance=DesktopSettings.Load(appearanceFile);
+Check(appearance.Language=="en" && appearance.Theme=="dark" && !appearance.AutoConnect && appearance.RetrySeconds==300,"older preferences gain appearance defaults while retaining connection choices");
+appearance.Language="vi";appearance.Theme="light";appearance.Save(appearanceFile);
+appearance=DesktopSettings.Load(appearanceFile);
+Check(appearance.Language=="vi" && appearance.Theme=="light" && !appearance.AutoConnect && appearance.RetrySeconds==300,"language and light theme survive restart without changing connection preferences");
+var workspaceStore=WorkspaceStore.Load(workspaceFile);
+Check(workspaceStore.Contains("existing-drive") && workspaceStore.Items.Count==0,"fresh install has no pre-created workspaces and all existing drives remain visible");
+var addedWorkspace=workspaceStore.Create("Tài liệu thử");
+Check(!workspaceStore.Contains("existing-drive"),"new workspace starts empty without affecting existing drive");
+workspaceStore.Assignments["existing-drive"]=addedWorkspace.Id;workspaceStore.Save(workspaceFile);
+var workspaceReload=WorkspaceStore.Load(workspaceFile);
+Check(workspaceReload.Active==addedWorkspace.Id && workspaceReload.Contains("existing-drive"),"workspace assignment and active workspace survive restart");
+workspaceReload.Active="";Check(workspaceReload.Contains("existing-drive"),"all-drives view includes user workspace drives without moving files");
+var otherWorkspace=workspaceReload.Create("Keep me");
+workspaceReload.Assignments["other-drive"]=otherWorkspace.Id;
+workspaceReload.Active=addedWorkspace.Id;workspaceReload.Delete(addedWorkspace.Id);
+Check(workspaceReload.Active=="" && workspaceReload.Items.Count==1 && workspaceReload.Items[0].Id==otherWorkspace.Id,"deleting active workspace returns to all drives and preserves other workspaces");
+Check(!workspaceReload.Assignments.ContainsKey("existing-drive") && workspaceReload.Assignments["other-drive"]==otherWorkspace.Id && workspaceReload.Contains("existing-drive"),"workspace deletion unassigns only its members and keeps those drives visible");
+workspaceReload.Delete("missing");workspaceReload.Delete("");Check(workspaceReload.Items.Count==1,"deleting missing or virtual workspace is a no-op");
+workspaceReload.Active=otherWorkspace.Id;workspaceReload.Delete(otherWorkspace.Id);workspaceReload.Save(workspaceFile);
+var emptyReload=WorkspaceStore.Load(workspaceFile);
+Check(emptyReload.Items.Count==0 && emptyReload.Assignments.Count==0 && emptyReload.Active=="" && emptyReload.Contains("existing-drive"),"deleting final workspace persists a truly empty workspace list while retaining all-drives access");
+try{workspaceStore.Create("  ");Check(false,"blank workspace rejected");}catch(ArgumentException){Check(true,"blank workspace rejected");}
+File.WriteAllText(workspaceFile,"{\"Items\":[{\"Id\":\"dup\",\"Name\":\"A\"},{\"Id\":\"dup\",\"Name\":\"B\"}]}");try{WorkspaceStore.Load(workspaceFile);Check(false,"corrupt workspace rejected");}catch(IOException){Check(true,"corrupt workspace rejected without overwriting it");}
+File.WriteAllText(workspaceFile,"{\"Items\":[{\"Id\":\"default\",\"Name\":\"Edit ảnh/video\"},{\"Id\":\"films\",\"Name\":\"Lưu trữ phim\"},{\"Id\":\"custom123\",\"Name\":\"Lưu trữ phim\"}],\"Active\":\"default\",\"Assignments\":{}}");
+var migrated=WorkspaceStore.Load(workspaceFile);
+Check(migrated.Items.Count==1 && migrated.Items[0].Id=="custom123" && migrated.Active=="" && File.Exists(workspaceFile+".before-v063"),"migration removes only unused legacy seeds, preserves user-created names and backs up old settings");
+File.WriteAllText(workspaceFile,"{\"Items\":[{\"Id\":\"films\",\"Name\":\"Lưu trữ phim\"}],\"Active\":\"films\",\"Assignments\":{\"drive1\":\"films\"}}");
+Check(WorkspaceStore.Load(workspaceFile).Contains("drive1"),"migration preserves a legacy group explicitly used by the user");
+var optionsFile=Path.Combine(temporaryRoot,"desktop-settings.json");var options=new DesktopSettings{Retry=false,TimeoutSeconds=60,CapacityThreshold=95};options.Save(optionsFile);var reloadedOptions=DesktopSettings.Load(optionsFile);
+Check(!reloadedOptions.Retry && reloadedOptions.TimeoutSeconds==60 && reloadedOptions.CapacityThreshold==95,"desktop settings persist independent of drive credentials");
+foreach (var (json, used, total) in new[] {
+    ("{\"total\":1000,\"used\":700,\"free\":300}", 700L, 1000L),
+    ("{\"total\":1000,\"free\":350}", 650L, 1000L) })
+{
+    using var capacityJson = System.Text.Json.JsonDocument.Parse(json);
+    var capacity = DriveService.ParseCapacity(capacityJson.RootElement);
+    Check(capacity?.UsedBytes == used && capacity.TotalBytes == total, "capacity metadata reports provider values with free-space fallback");
+}
+foreach (var json in new[] { "{}", "{\"total\":0,\"used\":0}", "{\"total\":100,\"used\":-1}", "{\"total\":100,\"used\":101}", "{\"total\":100,\"free\":101}" })
+{
+    using var capacityJson = System.Text.Json.JsonDocument.Parse(json);
+    Check(DriveService.ParseCapacity(capacityJson.RootElement) is null, "missing or inconsistent capacity stays unknown instead of fabricating usage");
 }
 void Reject(Action action, Type expected, string description)
 {
@@ -40,7 +102,16 @@ try
     Check(service.HasRclone, "bundled engine is available");
     Check(service.LoadProfiles().Count == 0, "first launch has no fabricated drive profiles");
     var profile = Profile();
-    Check(profile.ReadOnly, "new drives default to read-only");
+    var transitionCalls = 0;
+    var retryStep = await AccountSetupSession.FollowTransitionsAsync(new ConfigStep { State = "choose_type", Error = "Failed to query root: fixture error" }, step =>
+    {
+        transitionCalls++;
+        return Task.FromResult(new ConfigStep { State = "choose_type_done", Option = new ConfigQuestion { Name = "config_type", Exclusive = true } });
+    });
+    Check(transitionCalls == 1 && retryStep.Option?.Name == "config_type" && retryStep.Error.Contains("fixture error"), "OneDrive error-only transition resumes a usable question and retains its cause");
+    await RejectAsync(async () => await AccountSetupSession.FollowTransitionsAsync(new ConfigStep { State = "loop" }, step => Task.FromResult(step)), typeof(InvalidOperationException), "invalid provider transition loops stop instead of hanging the wizard");
+    Check(!profile.ReadOnly, "new drives default to read and write");
+    profile.ReadOnly = true; // An explicitly selected read-only mode must survive saving.
     DriveService.ValidateProfile(profile);
     Check(true, "Unicode display names and remote paths with spaces are valid");
     service.SaveProfiles(new[] { profile });
@@ -220,7 +291,7 @@ try
         var mountRoot = Path.Combine(temporaryRoot, "mount recovery");
         var localRoot = Path.Combine(temporaryRoot, "mount source"); Directory.CreateDirectory(localRoot);
         var mountLetter = "ZYXWVUT".Select(c => c + ":").First(l => !DriveInfo.GetDrives().Any(d => d.Name.StartsWith(l, StringComparison.OrdinalIgnoreCase)));
-        var mountedProfile = new DriveProfile { Name = "EasyMount disposable recovery test", Letter = mountLetter, Remote = "mount_fixture:", ReadOnly = false };
+        var mountedProfile = new DriveProfile { Name = "Drive chung – tên tiếng Việt tùy chỉnh", Letter = mountLetter, Remote = "mount_fixture:", ReadOnly = false };
         var first = new DriveService(mountRoot, rclone);
         Directory.CreateDirectory(mountRoot);
         File.WriteAllText(first.ConfigPath, "[mount_fixture]\ntype = local\n" + "[readonly_fixture]\ntype = drive\nscope = drive.readonly\n");
@@ -240,6 +311,8 @@ try
             disposableMountPid = lease.ProcessId;
             Check(!File.ReadAllText(leaseFile).Contains(lease.Secret()) && lease.Secret().Length > 20, "real mount persists Windows-protected controller credentials without plaintext");
             Check(Directory.Exists(mountLetter + "\\"), "WinFsp creates a real disposable Windows network drive");
+            Check(WindowsDrive.Connection(mountLetter)?.StartsWith(@"\\easymount\", StringComparison.OrdinalIgnoreCase) == true, "network volume uses the service host instead of server");
+            Check(WindowsDrive.Connection(mountLetter) == await first.NetworkVolumeAsync(mountedProfile), "long custom Vietnamese drive names survive the complete UNC path without truncation");
             first.Dispose();
             recovered = new DriveService(mountRoot, rclone);
             var wrong = lease with { StartTicks = lease.StartTicks - 1 };
@@ -264,6 +337,10 @@ try
             await Task.Delay(500);
             await recovered.PrepareUninstallAsync();
             Check(!Directory.Exists(mountLetter + "\\") && !File.Exists(leaseFile), "safe disconnect removes real drive and recovery lease");
+            Check(WindowsDrive.Connection(mountLetter) is null, "safe disconnect removes the Windows network mapping");
+            mountedProfile.Remote = "mount_fixture:" + temporaryRoot.Replace('\\', '/');
+            recovered.SaveProfiles(new[] { mountedProfile });
+            Check(Directory.Exists(Path.Combine(mountRoot, "cache-archive")), "verified clean cache is archived before changing cloud routes");
         }
         finally
         {
@@ -275,6 +352,42 @@ try
             } // Disposable local-fixture worker only; never a personal cloud mount.
 
         }
+    }
+    if (service.HasWinFsp && args.Contains("--mounts"))
+    {
+        var poolRoot = Path.Combine(temporaryRoot, "real pool");
+        var firstSource = Path.Combine(temporaryRoot, "priority one"); Directory.CreateDirectory(firstSource);
+        var secondSource = Path.Combine(temporaryRoot, "priority two"); Directory.CreateDirectory(secondSource);
+        using var pooled = new DriveService(poolRoot, rclone);
+        File.WriteAllText(pooled.ConfigPath, "[pool_a]\ntype = local\n[pool_b]\ntype = local\n");
+        var drive = "ZYXWVUT".Select(c => c + ":").First(l => !DriveInfo.GetDrives().Any(d => d.Name.StartsWith(l)));
+        var actualPool = new DriveProfile { Name = "Pool fixture", Letter = drive, Sources = new() {
+            new() { Remote = "pool_a:" + firstSource.Replace('\\', '/'), LimitBytes = 1024 },
+            new() { Remote = "pool_b:" + secondSource.Replace('\\', '/'), LimitBytes = 4096 } } };
+        pooled.SaveProfiles(new[] { actualPool });
+        Check((await pooled.NetworkVolumeAsync(actualPool)).StartsWith(@"\\pool\"), "pooled network host is compact so the friendly name leaves room for Explorer capacity text");
+        try
+        {
+            await pooled.ConnectAsync(actualPool);
+            var capacity = await pooled.GetCapacityAsync(actualPool);
+            Check(capacity is { TotalBytes: > 0, UsedBytes: >= 0 }, "live pooled controller provides capacity metadata for the UI");
+            File.WriteAllBytes(drive + "\\first.bin", Enumerable.Repeat((byte)17, 700).ToArray());
+            var deadline = DateTime.UtcNow.AddSeconds(35);
+            while (!File.Exists(Path.Combine(firstSource, "first.bin")) && DateTime.UtcNow < deadline) await Task.Delay(200);
+            Check(File.ReadAllBytes(Path.Combine(firstSource, "first.bin")).SequenceEqual(Enumerable.Repeat((byte)17, 700)), "real pooled mount places a complete new file on priority source one");
+            File.WriteAllBytes(drive + "\\second.bin", Enumerable.Repeat((byte)29, 700).ToArray());
+            deadline = DateTime.UtcNow.AddSeconds(35);
+            while (!File.Exists(Path.Combine(secondSource, "second.bin")) && DateTime.UtcNow < deadline) await Task.Delay(200);
+            Check(File.ReadAllBytes(Path.Combine(secondSource, "second.bin")).SequenceEqual(Enumerable.Repeat((byte)29, 700)) && !File.Exists(Path.Combine(firstSource, "second.bin")), "real pooled mount switches to source two when source one cannot fit the whole file");
+            Check(File.Exists(drive + "\\first.bin") && File.Exists(drive + "\\second.bin"), "both priority sources are readable through the same Windows drive");
+            await Task.Delay(1000);
+            await pooled.DisconnectAsync(actualPool.Id);
+            Check(WindowsDrive.Connection(drive) is null && !Directory.Exists(drive + "\\"), "pooled mount disconnect removes both mapping and logical drive");
+            await pooled.ConnectAsync(actualPool);
+            await pooled.DisconnectAsync(actualPool.Id);
+            Check(WindowsDrive.Connection(drive) is null, "reconnect and second disconnect leave no duplicate mapping");
+        }
+        finally { if (pooled.IsConnected(actualPool.Id)) await pooled.DisconnectAsync(actualPool.Id); }
     }
     if (!service.HasWinFsp)
     {

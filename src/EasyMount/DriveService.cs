@@ -23,6 +23,7 @@ public sealed class DriveService : IDisposable
     private sealed record Mount(Process Process, HttpClient Client, string ProfileId, string Letter, bool ReadOnly)
     {
         public bool Started { get; set; }
+        public string? NetworkPath { get; set; }
     }
     private readonly ConcurrentDictionary<string, Mount> mounts = new();
     // ponytail: one gate is enough for a desktop drive manager; use per-drive gates if parallel startup is needed.
@@ -141,7 +142,15 @@ public sealed class DriveService : IDisposable
             if ((next is null || RoutingIdentity(next) != RoutingIdentity(old)) &&
                 Directory.Exists(Path.Combine(DataDirectory, "cache", old.Id)) &&
                 Directory.EnumerateFiles(Path.Combine(DataDirectory, "cache", old.Id), "*", SearchOption.AllDirectories).Any())
-                throw new IOException("Ổ còn bộ nhớ đệm. Giữ nguyên nguồn cloud để phục hồi; hoàn tất upload và dọn cache trước khi đổi hoặc bỏ nguồn. Bạn vẫn có thể đổi tên ổ.");
+            {
+                var clean = Path.Combine(DataDirectory, "cache", old.Id + ".clean");
+                if (IsConnected(old.Id) || File.Exists(SessionFile(old.Id)) || !File.Exists(clean) || File.ReadAllText(clean) != RoutingIdentity(old))
+                    throw new IOException("Ổ còn cache chưa xác minh. Kết nối lại cấu hình cũ, chờ upload xong và ngắt an toàn trước khi đổi nguồn. Bạn vẫn có thể đổi tên ổ.");
+                var archive = Path.Combine(DataDirectory, "cache-archive");
+                Directory.CreateDirectory(archive);
+                Directory.Move(Path.Combine(DataDirectory, "cache", old.Id), Path.Combine(archive, old.Id + "-" + Guid.NewGuid().ToString("N")));
+                File.Delete(clean); // Cached downloads are archived, never reused for a different cloud route.
+            }
         }
         var path = Path.Combine(DataDirectory, "drives.json");
         var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
@@ -201,7 +210,7 @@ public sealed class DriveService : IDisposable
             throw new TimeoutException("Dịch vụ lưu trữ không phản hồi trong 40 giây. Kiểm tra mạng hoặc đăng nhập lại.");
         }
         await Task.WhenAll(stdout, stderr);
-        if (process.ExitCode != 0) throw new InvalidOperationException("rclone: " + FriendlyError(await stderr));
+        if (process.ExitCode != 0) throw new InvalidOperationException("EasyMount: " + FriendlyError(await stderr));
         return await stdout;
     }
 
@@ -217,11 +226,32 @@ public sealed class DriveService : IDisposable
         var labelsFile = Path.Combine(DataDirectory, "account-labels.json");
         var labels = File.Exists(labelsFile) ? JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(labelsFile)) ?? new() : new Dictionary<string, string>();
         var output = await RunAsync(new[] { "listremotes", "--long" }, outputLimit: int.MaxValue);
-        return output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        var accounts = output.Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(line => Regex.Match(line.Trim(), @"^(.+?):\s+(\S+)\s*$"))
             .Where(match => match.Success)
             .Select(match => new RemoteAccount(match.Groups[1].Value, match.Groups[2].Value) { DisplayName = labels.GetValueOrDefault(match.Groups[1].Value, match.Groups[1].Value) })
             .ToList();
+        var emailFile = Path.Combine(DataDirectory, "account-emails.json");
+        var emails = File.Exists(emailFile) ? JsonSerializer.Deserialize<Dictionary<string,string>>(File.ReadAllText(emailFile)) ?? new() : new Dictionary<string,string>();
+        var missing = accounts.Where(a => a.Type is "drive" or "onedrive" or "dropbox" && !emails.ContainsKey(a.Name)).ToList();
+        if (missing.Count > 0)
+        {
+            // Read credentials only in memory; fixed provider endpoints receive their own token.
+            try
+            {
+                using var config = JsonDocument.Parse(await RunAsync(new[] { "config", "dump" }, outputLimit: int.MaxValue));
+                foreach (var account in missing)
+                {
+                    if (!config.RootElement.TryGetProperty(account.Name, out var section) || !section.TryGetProperty("token",out var token)) continue;
+                    var email = await AccountSetupSession.ReadAccountEmailAsync(account.Type, token.GetString() ?? "");
+                    if (!string.IsNullOrWhiteSpace(email) && email.Contains('@') && !email.Any(char.IsControl)) emails[account.Name] = email;
+                }
+                var temporary = emailFile + ".tmp";
+                File.WriteAllText(temporary, JsonSerializer.Serialize(emails)); File.Move(temporary,emailFile,true);
+            }
+            catch { /* Identity lookup must not prevent session recovery. */ }
+        }
+        return accounts.Select(a => a with { Email = emails.GetValueOrDefault(a.Name) }).ToList();
     }
 
     public void SaveAccountLabel(string remote, string label)
@@ -310,6 +340,7 @@ public sealed class DriveService : IDisposable
         try
         {
             if (!RemoveMount(mount)) return; // An older process must not remove a newer connection.
+            try { WindowsDrive.Removed(mount.Letter, mount.NetworkPath); } catch (IOException) { /* Startup recovery retries shell cleanup. */ }
             DeleteSession(mount.ProfileId);
             mount.Client.Dispose();
             mount.Process.Dispose();
@@ -337,16 +368,22 @@ public sealed class DriveService : IDisposable
         {
             foreach (var profile in LoadProfiles())
             {
-                if (IsConnected(profile.Id) || !File.Exists(SessionFile(profile.Id))) continue;
+                if (IsConnected(profile.Id)) continue;
+                if (!File.Exists(SessionFile(profile.Id)))
+                {
+                    try { WindowsDrive.Removed(profile.Letter, @"\\server\" + profile.Name); }
+                    catch (IOException ex) { Publish(profile.Id, "Error", ex.Message); }
+                    continue;
+                }
                 Process? process = null; HttpClient? client = null;
                 try
                 {
                     var lease = JsonSerializer.Deserialize<MountSession>(File.ReadAllText(SessionFile(profile.Id))) ?? throw new InvalidDataException();
                     try { process = Process.GetProcessById(lease.ProcessId); }
-                    catch (ArgumentException) { DeleteSession(profile.Id); Publish(profile.Id, "Disconnected"); continue; }
+                    catch (ArgumentException) { WindowsDrive.Removed(profile.Letter, @"\\server\" + profile.Name); DeleteSession(profile.Id); Publish(profile.Id, "Disconnected"); continue; }
                     if (!lease.Matches(process, profile, RoutingIdentity(profile))) throw new InvalidDataException();
                     client = Controller(lease.Port, lease.Secret());
-                    var mount = new Mount(process, client, profile.Id, profile.Letter, profile.ReadOnly) { Started = true };
+                    var mount = new Mount(process, client, profile.Id, profile.Letter, profile.ReadOnly) { Started = true, NetworkPath = WindowsDrive.Connection(profile.Letter) };
                     using var stats = await RcAsync(mount, "vfs/stats"); // Authenticate before taking control of a surviving process.
                     if (stats.RootElement.GetProperty("opt").GetProperty("ReadOnly").GetBoolean() != lease.ReadOnly ||
                         NormalizeMountedRemote(stats.RootElement.GetProperty("fs").GetString() ?? "") != NormalizeMountedRemote(MountRemote(profile)))
@@ -368,6 +405,8 @@ public sealed class DriveService : IDisposable
         finally { operationGate.Release(); }
     }
 
+    public int MountTimeoutSeconds { get; set; } = 30;
+    public string MountLogLevel { get; set; } = "INFO";
     public async Task ConnectAsync(DriveProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
@@ -386,7 +425,7 @@ public sealed class DriveService : IDisposable
                 stale.Process.Dispose();
             }
             if (File.Exists(SessionFile(profile.Id))) throw new IOException("Còn thông tin phiên cũ chưa xác minh. Không tạo kết nối trùng; kiểm tra hoặc phục hồi phiên trước.");
-            await ValidateWriteAccessAsync(profile);
+            await TestProfileAsync(profile);
             if (!HasRclone) throw new FileNotFoundException("Thiếu thành phần kết nối. Chạy lại bộ cài EasyMount.");
             if (!HasWinFsp) throw new InvalidOperationException("Cần cài WinFsp để tạo ổ đĩa Windows. Bấm Tải WinFsp trên màn hình chính để mở trang chính thức, cài xong rồi mở lại EasyMount.");
             if (DriveInfo.GetDrives().Any(drive => drive.Name.StartsWith(profile.Letter, StringComparison.OrdinalIgnoreCase)))
@@ -401,14 +440,16 @@ public sealed class DriveService : IDisposable
             listener.Stop();
             var secret = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
             var protectedSecret = MountSession.Protect(secret);
+            var clean = Path.Combine(DataDirectory, "cache", profile.Id + ".clean");
+            if (File.Exists(clean)) File.Delete(clean);
             var args = new List<string>
             {
                 "mount", MountRemote(profile), profile.Letter,
-                "--network-mode", "--volname", profile.Name,
+                "--network-mode", "--volname", await NetworkVolumeAsync(profile),
                 "--vfs-cache-mode", "writes", "--vfs-write-back", "5s",
                 "--cache-dir", Path.Combine(DataDirectory, "cache", profile.Id),
                 "--log-file", Path.Combine(DataDirectory, "logs", profile.Id + ".log"),
-                "--log-level", "INFO", "--rc", "--rc-no-auth=false", "--rc-addr", "127.0.0.1:" + port
+                "--log-level", MountLogLevel is "DEBUG" or "NOTICE" or "ERROR" ? MountLogLevel : "INFO", "--rc", "--rc-no-auth=false", "--rc-addr", "127.0.0.1:" + port
             };
             if (profile.ReadOnly) args.Add("--read-only");
             var process = new Process { StartInfo = StartInfo(args), EnableRaisingEvents = true };
@@ -424,19 +465,21 @@ public sealed class DriveService : IDisposable
             _ = ReadBoundedAsync(process.StandardOutput, 0);
             var startupError = ReadBoundedAsync(process.StandardError);
             process.Exited += (sender, args) => { _ = HandleExitedAsync(mount); };
-            var deadline = DateTime.UtcNow.AddSeconds(30);
+            var deadline = DateTime.UtcNow.AddSeconds(Math.Clamp(MountTimeoutSeconds, 10, 60));
             while (DateTime.UtcNow < deadline)
             {
                 if (process.HasExited)
                     throw new InvalidOperationException("Không tạo được ổ đĩa: " + FriendlyError(await startupError));
                 if (Directory.Exists(profile.Letter + "\\"))
                 {
+                    mount.NetworkPath = WindowsDrive.Connection(profile.Letter);
+                    WindowsDrive.Added(profile.Letter);
                     Publish(profile.Id, "Connected");
                     return;
                 }
                 await Task.Delay(250);
             }
-            throw new TimeoutException("Ổ đĩa chưa sẵn sàng sau 30 giây. Kiểm tra WinFsp, tài khoản và nhật ký.");
+            throw new TimeoutException($"Ổ đĩa chưa sẵn sàng sau {Math.Clamp(MountTimeoutSeconds, 10, 60)} giây. Kiểm tra WinFsp, tài khoản và nhật ký.");
         }
         catch (Exception ex)
         {
@@ -464,12 +507,34 @@ public sealed class DriveService : IDisposable
         finally { operationGate.Release(); }
     }
 
-    private static async Task<JsonDocument> RcAsync(Mount mount, string command)
+    private static async Task<JsonDocument> RcAsync(Mount mount, string command, string payload = "{}")
     {
-        using var response = await mount.Client.PostAsync(command, new StringContent("{}", Encoding.UTF8, "application/json"));
+        using var response = await mount.Client.PostAsync(command, new StringContent(payload, Encoding.UTF8, "application/json"));
         var body = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode) throw new IOException($"Không liên lạc được bộ điều khiển ổ đĩa ({(int)response.StatusCode}). Giữ ứng dụng chạy và thử lại.");
         return JsonDocument.Parse(string.IsNullOrWhiteSpace(body) ? "{}" : body);
+    }
+
+    public async Task<DriveCapacity?> GetCapacityAsync(DriveProfile profile)
+    {
+        await operationGate.WaitAsync();
+        try
+        {
+            if (!mounts.TryGetValue(profile.Id, out var mount) || !IsRunning(mount)) return null;
+            using var result = await RcAsync(mount, "operations/about", JsonSerializer.Serialize(new { fs = MountRemote(profile) }));
+            return ParseCapacity(result.RootElement);
+        }
+        finally { operationGate.Release(); }
+    }
+
+    internal static DriveCapacity? ParseCapacity(JsonElement root)
+    {
+        if (!root.TryGetProperty("total", out var totalValue) || !totalValue.TryGetInt64(out var total) || total <= 0) return null;
+        long used;
+        if (root.TryGetProperty("used", out var usedValue) && usedValue.TryGetInt64(out used)) { }
+        else if (root.TryGetProperty("free", out var freeValue) && freeValue.TryGetInt64(out var free) && free >= 0 && free <= total) used = total - free;
+        else return null;
+        return used >= 0 && used <= total ? new DriveCapacity(used, total, DateTime.Now) : null;
     }
 
     public async Task DisconnectAsync(string profileId)
@@ -480,6 +545,7 @@ public sealed class DriveService : IDisposable
             if (!mounts.TryGetValue(profileId, out var mount)) { Publish(profileId, "Disconnected"); return; }
             if (mount.Process.HasExited)
             {
+                WindowsDrive.Removed(mount.Letter, mount.NetworkPath);
                 RemoveMount(mount);
                 DeleteSession(profileId);
                 mount.Client.Dispose();
@@ -490,7 +556,7 @@ public sealed class DriveService : IDisposable
             Publish(profileId, "Disconnecting");
             try
             {
-                if (!mount.ReadOnly)
+                // Check even a read-only mount: an older writable session may have left cached uploads.
                 {
                     using var stats = await RcAsync(mount, "vfs/stats");
                     if (!stats.RootElement.TryGetProperty("diskCache", out var cache))
@@ -514,6 +580,13 @@ public sealed class DriveService : IDisposable
                 {
                     if (timeout.IsCancellationRequested) throw new IOException("Tiến trình đã dừng nhưng Windows chưa tháo ổ. Giữ cache và kiểm tra trước khi kết nối lại.");
                     await Task.Delay(200);
+                }
+                WindowsDrive.Removed(mount.Letter, mount.NetworkPath);
+                var profile = LoadProfiles().FirstOrDefault(p => p.Id == profileId);
+                if (profile is not null)
+                {
+                    Directory.CreateDirectory(Path.Combine(DataDirectory, "cache"));
+                    File.WriteAllText(Path.Combine(DataDirectory, "cache", profileId + ".clean"), RoutingIdentity(profile));
                 }
                 DeleteSession(profileId);
                 mount.Client.Dispose();
@@ -571,6 +644,16 @@ public sealed class DriveService : IDisposable
     }
 
     public void OpenLogs() => Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true, ArgumentList = { Path.Combine(DataDirectory, "logs") } });
+
+    public async Task<string> NetworkVolumeAsync(DriveProfile profile)
+    {
+        var accounts = await ListRemotesAsync();
+        var type = profile.IsPool ? "pool" : accounts.FirstOrDefault(a => a.Name == profile.Remote.Split(':')[0])?.Type ?? "cloud";
+        var host = type switch { "drive" => "ggdrive", "onedrive" => "onedrive", "dropbox" => "dropbox", "pool" => "pool", _ => "easymount" };
+        var share = Regex.Replace(profile.Name, @"[\\/:*?""<>|]", "_").Trim().TrimEnd('.');
+        if (share.Length == 0) share = "EasyMount";
+        return @"\\" + host + "\\" + share;
+    }
 
     public void Dispose()
     {

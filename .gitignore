@@ -18,3 +18,11 @@ sessions/
 runtime-roots.json
 uninstall.pending
 uninstall-blocked.txt
+node_modules/
+account-emails.json
+desktop-settings.json
+workspaces.json
+*.pfx
+*.p12
+__pycache__/
+*.pyc

@@ -6,15 +6,18 @@ param(
     [switch]$SkipAppBuild,
     [string]$GoPath = 'go',
     [string]$EnginePath = '',
+    [string]$OAuthClientsPath = (Join-Path $PSScriptRoot 'oauth-clients.json'),
     [string]$AppPayloadDirectory = (Join-Path (Get-Location) 'work\easymount-build\app')
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $projectRoot = $PSScriptRoot
+$appVersion = (Select-Xml -LiteralPath (Join-Path $projectRoot "Directory.Build.props") -XPath "/Project/PropertyGroup/Version").Node.InnerText
+if ($appVersion -notmatch "^\d+\.\d+\.\d+$") { throw "A numeric three-part installer version is required." }
 $workRoot = [IO.Path]::GetFullPath($WorkDirectory)
 New-Item -ItemType Directory -Force $workRoot | Out-Null
 if (-not $SkipAppBuild) {
-    & (Join-Path $projectRoot 'build.ps1') -DotnetPath $DotnetPath -GoPath $GoPath -EnginePath $EnginePath -WorkDirectory (Split-Path ([IO.Path]::GetFullPath($AppPayloadDirectory)) -Parent)
+    & (Join-Path $projectRoot 'build.ps1') -DotnetPath $DotnetPath -GoPath $GoPath -EnginePath $EnginePath -OAuthClientsPath $OAuthClientsPath -WorkDirectory (Split-Path ([IO.Path]::GetFullPath($AppPayloadDirectory)) -Parent)
 }
 $appPayload = [IO.Path]::GetFullPath($AppPayloadDirectory)
 if (-not (Test-Path (Join-Path $appPayload 'EasyMount.exe'))) { throw 'Build the internal app payload first.' }
@@ -88,17 +91,17 @@ $escaped = $licenseText.Replace('\', '\\').Replace('{', '\{').Replace('}', '\}')
 $licenseRtf = Join-Path $workRoot 'License.rtf'
 ('{\rtf1\ansi\deff0{\fonttbl{\f0 Segoe UI;}}\f0\fs18 ' + $escaped + '}') | Set-Content $licenseRtf -Encoding ascii
 
-$appMsi = Join-Path $workRoot 'EasyMount-0.3.5-x64.msi'
-$setup = Join-Path $projectRoot 'EasyMount-0.3.5-Setup.exe'
-& $wix build (Join-Path $projectRoot 'installer\Package.wxs') -arch x64 -d "ProjectDir=$projectRoot" -d "PayloadDir=$payload" -pdbtype none -o $appMsi
+$appMsi = Join-Path $workRoot "EasyMount-$appVersion-x64.msi"
+$setup = Join-Path $projectRoot "EasyMount-$appVersion-Setup.exe"
+& $wix build (Join-Path $projectRoot 'installer\Package.wxs') -arch x64 -d "AppVersion=$appVersion" -d "ProjectDir=$projectRoot" -d "PayloadDir=$payload" -pdbtype none -o $appMsi
 if ($LASTEXITCODE -ne 0) { throw 'EasyMount MSI build failed.' }
-& $wix build (Join-Path $projectRoot 'installer\Bundle.wxs') -arch x64 -ext WixToolset.BootstrapperApplications.wixext -ext WixToolset.Util.wixext -d "ProjectDir=$projectRoot" -d "WinFspMsi=$winFspMsi" -d "AppMsi=$appMsi" -d "LicenseRtf=$licenseRtf" -pdbtype none -o $setup
+& $wix build (Join-Path $projectRoot 'installer\Bundle.wxs') -arch x64 -ext WixToolset.BootstrapperApplications.wixext -ext WixToolset.Util.wixext -d "AppVersion=$appVersion" -d "ProjectDir=$projectRoot" -d "WinFspMsi=$winFspMsi" -d "AppMsi=$appMsi" -d "LicenseRtf=$licenseRtf" -pdbtype none -o $setup
 if ($LASTEXITCODE -ne 0) { throw 'EasyMount bootstrapper build failed.' }
 
 $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
 "$hash  $([IO.Path]::GetFileName($setup))" | Set-Content ($setup + '.sha256') -Encoding ascii
 @{
-    version='0.3.5'; architecture='x64'; setup=[IO.Path]::GetFileName($setup); setupSha256=$hash
+    version=$appVersion; architecture='x64'; setup=[IO.Path]::GetFileName($setup); setupSha256=$hash
     winFspVersion='2.1.25156'; winFspSource=$winFspUrl; winFspMsiSha256=$winFspHash
     winFspSignature=$signature.Status.ToString(); signer=$signature.SignerCertificate.Subject
     winFspSourceArchive=$sourceUrl; winFspSourceSha256=$sourceHash

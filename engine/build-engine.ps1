@@ -21,7 +21,7 @@ New-Item -ItemType Directory -Force (Split-Path $output -Parent) | Out-Null
 $env:CGO_ENABLED = '0'
 Push-Location $source
 try {
-    & $goExecutable build -tags cmount -trimpath -ldflags '-s -w -X github.com/rclone/rclone/fs.Version=v1.75.2-easymount.1' -o $output .
+    & $goExecutable build -tags cmount -trimpath -ldflags '-s -w -X github.com/rclone/rclone/fs.Version=v1.75.2-easymount.2' -o $output .
     if ($LASTEXITCODE -ne 0) { throw 'EasyMount rclone engine build failed.' }
 } finally { Pop-Location }
 Write-Host "Engine ready: $output"

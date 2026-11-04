@@ -1,15 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="LocalizationChecks.cs" />
+    <Compile Include="../src/EasyMount/WorkspaceStore.cs" Link="WorkspaceStore.cs" />
+    <Compile Include="../src/EasyMount/WindowsDrive.cs" Link="WindowsDrive.cs" />
     <Compile Include="../src/EasyMount/UninstallSupport.cs" Link="UninstallSupport.cs" />
     <Compile Include="../src/EasyMount/MountSession.cs" Link="MountSession.cs" />
     <Compile Include="../src/EasyMount/Models.cs" Link="Models.cs" />
     <Compile Include="../src/EasyMount/DriveService.cs" Link="DriveService.cs" />
+    <Compile Include="../src/EasyMount/ReleaseClient.cs" Link="ReleaseClient.cs" />
     <Compile Include="../src/EasyMount/AccountSetupSession.cs" Link="AccountSetupSession.cs" />
   </ItemGroup>
 </Project>

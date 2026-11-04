@@ -36,6 +36,8 @@ public sealed class ConfigStep
     public string State { get; set; } = "";
     public string Error { get; set; } = "";
     public ConfigQuestion? Option { get; set; }
+    public string Result { get; set; } = "";
+    public bool NeedsAdvance => State != "" && Option is null;
 }
 public sealed record CloudProvider(string Name, string Description)
 {
@@ -150,13 +152,30 @@ public sealed class AccountSetupSession : IAsyncDisposable
         return await pending;
     }
 
-    private async Task<ConfigStep> StepAsync(object input)
+    private async Task<ConfigStep> ReadStepAsync(object input)
     {
         var json = await CallAsync("config/create", input);
         var step = json.Deserialize<ConfigStep>(jsonOptions) ?? throw new InvalidOperationException("Dịch vụ trả về cấu hình không hợp lệ.");
         foreach (var secret in secrets) step.Error = step.Error.Replace(secret, "••••");
         step.Error = Regex.Replace(step.Error, @"(?i)(access_token|refresh_token|client_secret|password)([=: ]+)[^\s&]+", "$1$2[ẩn]");
         return step;
+    }
+
+    private async Task<ConfigStep> StepAsync(object input) => await FollowTransitionsAsync(await ReadStepAsync(input),
+        step => ReadStepAsync(new { name = createdName, type = createdType, parameters = initialParameters,
+            opt = new { nonInteractive = true, @continue = true, state = step.State, result = step.Result } }));
+
+    internal static async Task<ConfigStep> FollowTransitionsAsync(ConfigStep step, Func<ConfigStep, Task<ConfigStep>> advance)
+    {
+        string previousError = step.Error;
+        for (var i = 0; i < 12; i++)
+        {
+            if (step.Error != "") previousError = step.Error;
+            if (!step.NeedsAdvance) { if (step.Error == "") step.Error = previousError; return step; }
+            // ConfigError/ConfigGoto can carry a state but no input question.
+            step = await advance(step);
+        }
+        throw new InvalidOperationException("Dịch vụ không trả về bước cấu hình hợp lệ. " + previousError);
     }
 
     public async Task<Uri?> BrowserUrlAsync()
@@ -172,10 +191,19 @@ public sealed class AccountSetupSession : IAsyncDisposable
         try
         {
             var config = await CallAsync("config/get", new { name = createdName });
-            using var token = JsonDocument.Parse(config.GetProperty("token").GetString()!);
+            return await ReadAccountEmailAsync(createdType, config.GetProperty("token").GetString()!);
+        }
+        catch { return null; }
+    }
+
+    public static async Task<string?> ReadAccountEmailAsync(string type, string tokenJson)
+    {
+        try
+        {
+            using var token = JsonDocument.Parse(tokenJson);
             using var http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(15) };
             http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.RootElement.GetProperty("access_token").GetString());
-            using var request = createdType switch
+            using var request = type switch
             {
                 "onedrive" => new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName"),
                 "dropbox" => new HttpRequestMessage(HttpMethod.Post, "https://api.dropboxapi.com/2/users/get_current_account"),
@@ -185,14 +213,14 @@ public sealed class AccountSetupSession : IAsyncDisposable
             response.EnsureSuccessStatusCode();
             using var info = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var root = info.RootElement;
-            return createdType switch
+            return type switch
             {
                 "onedrive" => root.TryGetProperty("mail", out var mail) && mail.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(mail.GetString()) ? mail.GetString() : root.GetProperty("userPrincipalName").GetString(),
                 "dropbox" => root.GetProperty("email").GetString(),
                 _ => root.GetProperty("user").GetProperty("emailAddress").GetString()
             };
         }
-        catch { return null; } // Providers may omit identity; the user can enter a label.
+        catch { return null; } // Missing identity must not block existing mounts.
     }
 
     public async Task CompleteAsync()

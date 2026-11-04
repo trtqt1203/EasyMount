@@ -1,5 +1,5 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="EasyMount" Manufacturer="EasyMount" Version="0.3.5"
+  <Package Name="EasyMount" Manufacturer="EasyMount" Version="$(var.AppVersion)"
            UpgradeCode="483B6FE6-C971-43BD-A700-37443EAD8F7F" Language="1033"
            Scope="perMachine" InstallerVersion="500" Compressed="yes">
     <MajorUpgrade DowngradeErrorMessage="A newer version of EasyMount is already installed." />

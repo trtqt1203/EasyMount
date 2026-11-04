@@ -35,3 +35,12 @@ $s = Get-Content -LiteralPath $options -Raw
 $s = $s.Replace('type Options struct {', "type Options struct {`n`tEasyMountPlan string ``config:`"easymount_plan`"```n`tEasyMountPriority bool ``config:`"easymount_priority`"```n`tEasyMountLimits string ``config:`"easymount_limits`"``")
 [IO.File]::WriteAllText($options, $s)
 Copy-Item (Join-Path $PSScriptRoot 'priority.go') (Join-Path $SourceRoot 'backend\union\priority_easymount.go') -Force
+
+# Network prefixes are UNC paths, not 32-byte disk labels. Byte truncation also
+# splits Vietnamese UTF-8 characters. WinFsp accepts the complete network path.
+$utils = Join-Path $SourceRoot 'cmd\mountlib\utils.go'
+$s = Get-Content -LiteralPath $utils -Raw
+$anchor = 'if runtime.GOOS == "windows" && len(vol) > 32 {'
+if (-not $s.Contains($anchor)) { throw 'rclone volume name handling changed.' }
+$s = $s.Replace($anchor, 'if runtime.GOOS == "windows" && !o.NetworkMode && !strings.HasPrefix(vol, `\\`) && len(vol) > 32 {')
+[IO.File]::WriteAllText($utils, $s)

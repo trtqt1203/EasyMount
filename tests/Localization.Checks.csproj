@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><OutputType>Exe</OutputType><UseWPF>true</UseWPF><EnableDefaultCompileItems>false</EnableDefaultCompileItems><Nullable>enable</Nullable></PropertyGroup>
+ <ItemGroup><Compile Include="LocalizationChecks.cs"/><Compile Include="../src/EasyMount/Localization.cs" Link="Localization.cs"/><Compile Include="../src/EasyMount/Theme.cs" Link="Theme.cs"/><EmbeddedResource Include="../src/EasyMount/Translations.json" LogicalName="EasyMount.Translations.json"/></ItemGroup>
+</Project>
