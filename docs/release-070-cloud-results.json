@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-04",
+  "provider": "Google Drive",
+  "candidate": "0.7.0-beta.1",
+  "mode": "direct engine/API; existing OAuth sessions; not mounted VFS",
+  "accountCount": 5,
+  "distinctCachedEmailCount": 5,
+  "uniqueFixtureBytes": 4194304,
+  "accounts": [
+    {
+      "account": 1,
+      "status": "passed",
+      "checks": [
+        "upload-download-sha256-unicode",
+        "rename",
+        "edit-download-integrity",
+        "delete-disposable-fixture"
+      ]
+    },
+    {
+      "account": 2,
+      "status": "passed",
+      "checks": [
+        "upload-download-sha256-unicode",
+        "rename",
+        "edit-download-integrity",
+        "delete-disposable-fixture"
+      ]
+    },
+    {
+      "account": 3,
+      "status": "passed",
+      "checks": [
+        "upload-download-sha256-unicode",
+        "rename",
+        "edit-download-integrity",
+        "delete-disposable-fixture"
+      ]
+    },
+    {
+      "account": 4,
+      "status": "passed",
+      "checks": [
+        "upload-download-sha256-unicode",
+        "rename",
+        "edit-download-integrity",
+        "delete-disposable-fixture"
+      ]
+    },
+    {
+      "account": 5,
+      "status": "passed",
+      "checks": [
+        "upload-download-sha256-unicode",
+        "rename",
+        "edit-download-integrity",
+        "delete-disposable-fixture"
+      ]
+    }
+  ],
+  "observedFailure": {
+    "account": 1,
+    "phase": "disposable fixture cleanup",
+    "initialStatus": "failed",
+    "targetedCleanup": "succeeded",
+    "freshFullRetest": "passed",
+    "originalCause": "undetermined"
+  },
+  "pool": {
+    "sourceCount": 5,
+    "configuredLimitBytesPerSource": 8,
+    "status": "passed",
+    "checks": [
+      "priority file placed intact on source 1",
+      "union reads source 1",
+      "priority file placed intact on source 2",
+      "union reads source 2",
+      "priority file placed intact on source 3",
+      "union reads source 3",
+      "priority file placed intact on source 4",
+      "union reads source 4",
+      "priority file placed intact on source 5",
+      "union reads source 5",
+      "all five exhausted limits reject another whole file",
+      "duplicate read resolves to first priority source",
+      "epall duplicate update affects source 1",
+      "epall duplicate update affects source 2",
+      "epall duplicate update affects source 3",
+      "epall duplicate update affects source 4",
+      "epall duplicate update affects source 5",
+      "epall duplicate deletion empties source 1",
+      "epall duplicate deletion empties source 2",
+      "epall duplicate deletion empties source 3",
+      "epall duplicate deletion empties source 4",
+      "epall duplicate deletion empties source 5"
+    ]
+  },
+  "notCovered": [
+    "fresh interactive OAuth",
+    "OneDrive",
+    "Dropbox",
+    "mounted cloud VFS",
+    "physical quota exhaustion",
+    "large-file over 4 GiB",
+    "network/authentication interruption"
+  ]
+}
