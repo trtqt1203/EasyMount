@@ -35,3 +35,19 @@ jobs:
         run: dotnet run --project tests/EasyMount.Checks.csproj -- work/engine/rclone.exe
       - name: Priority engine integration
         run: python tests/check-pool.py work/engine/rclone.exe
+      - name: Build disposable installer fixture
+        shell: pwsh
+        run: |
+          # Nonfunctional application identity: never publish this test installer.
+          '{"drive":{"client_id":"fixture-client-id","client_secret":"fixture-client-secret"}}' | Set-Content "$env:RUNNER_TEMP/oauth-fixture.json"
+          ./build-setup.ps1 -EnginePath work/engine/rclone.exe -OAuthClientsPath "$env:RUNNER_TEMP/oauth-fixture.json"
+      - name: Verify installer structure
+        shell: pwsh
+        run: |
+          $version = (Select-Xml Directory.Build.props -XPath '/Project/PropertyGroup/Version').Node.InnerText
+          ./tests/check-installer.ps1 -SetupPath "EasyMount-$version-Setup.exe" -WixPath work/easymount-installer/wix/wix.exe
+      - name: Clean Windows install, WinFsp mounts and uninstall
+        shell: pwsh
+        run: |
+          $version = (Select-Xml Directory.Build.props -XPath '/Project/PropertyGroup/Version').Node.InnerText
+          ./tests/check-clean-install.ps1 -SetupPath "EasyMount-$version-Setup.exe" -PayloadDirectory work/easymount-build/app
