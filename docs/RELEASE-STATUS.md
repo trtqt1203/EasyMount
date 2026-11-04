@@ -38,7 +38,15 @@ This is not a public stable release.
 - Complete the remaining gates in RELEASE-PLAN.md: real multi-account tests for all three providers, five-cloud pool/data safety tests, clean Windows install/upgrade/uninstall evidence, signing, sanitized source publication, downloadable release/update verification, and beta feedback period.
 - A passing local suite or installer build must not be reported as completion of those gates.
 - Release source is on branch release/0.7.0-beta.1. Source-only Windows CI passed at commit b4ad58d98f3f111ae324e292aa5c5acc0d288a92: https://github.com/trtqt1203/EasyMount/actions/runs/41855549280 . This rebuilt the pinned engine from source and ran the desktop/local checks on GitHub.
-- The expanded clean install/mount/uninstall run for c072f568439be01437e9d32703910dd2358ce685 is still running: https://github.com/trtqt1203/EasyMount/actions/runs/41855887074 . Its disposable installer uses nonfunctional fixture OAuth and must never be distributed.
+- The expanded clean install/mount/uninstall run passed for c072f568439be01437e9d32703910dd2358ce685: https://github.com/trtqt1203/EasyMount/actions/runs/41855887074 . It installed Setup on a clean GitHub-hosted Windows runner, matched installed payload hashes, ran actual local WinFsp mount tests, removed EasyMount and preserved shared WinFsp. Its disposable installer uses nonfunctional fixture OAuth and must never be distributed. Upgrade from the previous user version and full desktop UI acceptance remain separate.
 - OneDrive/Dropbox accounts are not configured locally. User has been asked to add test accounts through the app; no password or token is requested in chat.
-- Windows Sandbox is disabled on the user's machine; it has not been enabled or the computer restarted. Clean install/mount/uninstall acceptance is being attempted on a disposable GitHub-hosted runner.
+- Windows Sandbox is disabled on the user's machine; it has not been enabled or the computer restarted. Clean install/mount/uninstall acceptance ran on a disposable GitHub-hosted runner.
 - Google domain verification guidance requires a DNS-level Domain property, not URL-prefix-only ownership. Awaiting the user's controlled domain; no domain purchase has been made. Source: https://support.google.com/cloud/answer/13804266?hl=en .
+
+## Short website address
+
+- User requested Cloudflare Pages. Dedicated project easymount was created in the existing Cloudflare account without modifying WakeStop.
+- https://easymount.pages.dev/ is deployed and rendered in the browser; home, guide, privacy, logo and /api/releases each returned HTTP 200.
+- The Pages advanced-mode gateway serves the existing public Sites origin. This is a short address, not a full hosting migration. Cookies/Authorization are not forwarded; upstream cookies are removed; only GET/HEAD are accepted. Fixed-origin, redirect and error handling checks passed.
+- Release API correctly remains unpublished/null download. No stable release or OAuth approval is implied by the new address. pages.dev does not provide DNS ownership of its parent, so Google verification remains unresolved.
+- App source now uses the short website address for help/update links; installed desktop is still unchanged until a safe candidate upgrade is performed.

@@ -28,6 +28,8 @@ jobs:
         run: dotnet build src/EasyMount/EasyMount.csproj -c Release
       - name: Localization and themes
         run: dotnet run --project tests/Localization.Checks.csproj
+      - name: Short website gateway boundaries
+        run: node tests/check-pages-gateway.mjs
       - name: Build pinned engine source
         shell: pwsh
         run: ./engine/build-engine.ps1 -WorkDirectory work/engine-source -OutputPath work/engine/rclone.exe

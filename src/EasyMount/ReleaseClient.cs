@@ -10,7 +10,7 @@ public sealed record ReleaseInfo(Version? Version, Uri? DownloadUrl, bool IsPubl
 
 public sealed class ReleaseClient
 {
-    public static readonly Uri Website = new("https://easymount-cloud-drive.trtqt1203.chatgpt.site/");
+    public static readonly Uri Website = new("https://easymount.pages.dev/");
     private readonly HttpClient client;
     private readonly Uri endpoint;
     public ReleaseClient(HttpClient client, Uri? endpoint = null)
