@@ -82,3 +82,9 @@ This is not a public stable release.
 - Final packaging CI 41945678142 succeeded for source 57ded36e2cbdb667f65cb5cddff0717c7223e44f: build, localization, gateway, rebuilt engine, core checks, priority checks, fixture Setup, 37 installer checks and clean Windows install/mount/uninstall. The CI fixture has nonfunctional OAuth and is not the draft release artifact.
 
 - One existing OneDrive account also passed seven real temporary-VFS acceptance checks with engine .3 and the unchanged candidate DriveService: unique disposable root, service connect, mounted 1 MiB Unicode write/read SHA256, independent cloud download/hash, mounted deletion confirmed on cloud, empty-root removal and safe disconnect. Both the test drive and Windows mapping disappeared and no test session lease remained. Personal drive profiles were not changed; private credential/cache/recovery files are retained outside the source. See release-071-onedrive-vfs-results.json and tools/cloud-mount-check. This does not cover a second account, fresh OAuth, large files or interrupted uploads.
+
+## Owner follow-up and installed identity repair
+
+- Owner declined further interactive Dropbox/second-OneDrive sign-in; no browser/native UI automation was resumed. Those tests are deferred by the owner, not marked passed.
+- Owner confirmed there is no controlled custom domain. Google DNS ownership/verification therefore remains unresolved; no domain was purchased.
+- Owner requested the OneDrive line below the drive name be fixed. Installed account cache lacked the OneDrive email, while the candidate's owner fallback resolved it successfully. The verified same-drive email was added atomically to the installed account-emails cache after a private backup. Existing cached emails, drive profiles/names, account labels and OAuth configuration were verified unchanged. Native UI was not controlled or observed; its Refresh action reloads accounts. See release-071-onedrive-email-repair.json.

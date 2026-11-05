@@ -1,0 +1,11 @@
+{
+  "provider": "OneDrive",
+  "accountCount": 1,
+  "emailCacheRepaired": true,
+  "otherCachedEmailsPreserved": true,
+  "driveProfilesAndNamesUnchanged": true,
+  "accountLabelsUnchanged": true,
+  "oauthConfigUnchanged": true,
+  "method": "provider-owner email resolved by candidate service using isolated copy of same configured drive",
+  "nativeUiObserved": false
+}
