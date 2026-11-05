@@ -70,6 +70,8 @@ Invoke-WebRequest 'https://raw.githubusercontent.com/winfsp/winfsp/ddca7bd548185
 Copy-Item $licensePath (Join-Path $projectRoot 'docs\WinFsp-License.txt') -Force
 Copy-Item (Join-Path $projectRoot 'docs\rclone-LICENSE.txt') $thirdParty -Force
 Copy-Item (Join-Path $projectRoot 'docs\THIRD-PARTY-NOTICES.md') $thirdParty -Force
+Copy-Item (Join-Path $projectRoot 'docs\dotnet-LICENSE.txt') $thirdParty -Force
+Copy-Item (Join-Path $projectRoot 'docs\dotnet-THIRD-PARTY-NOTICES.txt') $thirdParty -Force
 Copy-Item (Join-Path $projectRoot 'README.md') $payload -Force
 Copy-Item (Join-Path $projectRoot 'LICENSE') $payload -Force
 

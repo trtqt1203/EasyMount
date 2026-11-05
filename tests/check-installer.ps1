@@ -56,7 +56,9 @@ foreach ($pair in @(
     @{Name='oauth-clients.json'; Path='app\oauth-clients.json'},
     @{Name='README.md'; Path='README.md'},
     @{Name='WinFsp-License.txt'; Path='docs\WinFsp-License.txt'},
-    @{Name='THIRD-PARTY-NOTICES.md'; Path='docs\THIRD-PARTY-NOTICES.md'}
+    @{Name='THIRD-PARTY-NOTICES.md'; Path='docs\THIRD-PARTY-NOTICES.md'},
+    @{Name='dotnet-LICENSE.txt'; Path='docs\dotnet-LICENSE.txt'},
+    @{Name='dotnet-THIRD-PARTY-NOTICES.txt'; Path='docs\dotnet-THIRD-PARTY-NOTICES.txt'}
 )) {
     $file = @($files | Where-Object { $_.Name -eq $pair.Name })
     Check ($file.Count -eq 1) "MSI contains $($pair.Name)"

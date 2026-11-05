@@ -1,5 +1,7 @@
 # Thành phần bên thứ ba
 
+Microsoft .NET 10 — runtime được phân phối cùng app (self-contained). Bản giấy phép và thông báo bên thứ ba nguyên văn từ gói Microsoft .NET SDK 10.0.403 đã xác minh SHA512 nằm tại `dotnet-LICENSE.txt` và `dotnet-THIRD-PARTY-NOTICES.txt` trong thư mục `third-party`. Runtime đi kèm bản ứng viên này là 10.0.14; không cần tải runtime khi cài.
+
 WinFsp - Windows File System Proxy, Copyright (C) Bill Zissimopoulos
 
 Repository và giấy phép: https://github.com/winfsp/winfsp
