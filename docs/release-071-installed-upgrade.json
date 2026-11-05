@@ -1,0 +1,54 @@
+{
+  "Version": "0.7.1-beta.2+57ded36e2cbdb667f65cb5cddff0717c7223e44f",
+  "AppPayloadMatches": true,
+  "EngineMatches": true,
+  "Files": [
+    {
+      "Name": "rclone.conf",
+      "Exists": true,
+      "Unchanged": false
+    },
+    {
+      "Name": "drives.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "desktop-settings.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "ui-settings.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "account-emails.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "account-labels.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "workspaces.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "runtime-roots.json",
+      "Exists": true,
+      "Unchanged": true
+    }
+  ],
+  "SetupExitCode": 0,
+  "RebootPerformed": false,
+  "InteractiveUacTested": false,
+  "NonTokenConfigurationUnchanged": true,
+  "ObservedOnlineBeforeAndAfter": 6,
+  "ProfilesPreserved": 7,
+  "Scope": "Existing-owner elevated upgrade; no pending upload deliberately injected; no reboot or standard-user/UAC acceptance"
+}

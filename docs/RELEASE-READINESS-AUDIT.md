@@ -2,19 +2,19 @@
 
 Scope remains the complete RELEASE-PLAN.md, not merely a green build.
 Candidate: 0.7.1-beta.2, source 57ded36e2cbdb667f65cb5cddff0717c7223e44f.
-Installed desktop remains 0.7.0-beta.1 with the OneDrive email cache repaired.
+Installed desktop is now 0.7.1-beta.2+57ded36; existing-owner upgrade and auto-connect were observed directly.
 This audit does not authorize publication or claim Stable acceptance.
 
 | Requirement | Evidence and current result | Remaining gate |
 | --- | --- | --- |
 | .NET 10 migration and reproducible build | Pinned SDK/runtime; clean Windows CI 41945678142 succeeded; BUILD.json | Next exact candidate's installed native UI still unobserved |
-| Google public multi-account OAuth | Five existing identities passed real file tests; five-source VFS passed 24 checks | Project remains Testing; owner has no DNS-controlled domain; restricted-scope review not submitted/approved |
+| Google public multi-account OAuth | Five existing identities passed real file tests; five-source VFS passed 24 checks | DNS domain ownership verified; Production and verified/published branding completed with owner approval. Restricted-scope review awaits a real YouTube OAuth/use demo; no submission or data-access approval |
 | OneDrive | Existing account passed direct provider operations, 1 MiB and 128 MiB temporary VFS write/read SHA256, independent cloud verification/deletion and safe unmount; installed email cache repaired | Exact candidate fresh-login/UI and second independent account unverified; further sign-in declined by owner; not every file-size boundary is covered |
 | Dropbox | Implemented provider flow; no real-provider acceptance in this run | Further interactive sign-in declined by owner; do not describe it as verified |
 | Five-source whole-file priority | Direct engine tests and 24 real pooled-VFS checks; each generated file independently found on its expected source, no split/duplicate, deletion and unmount verified | Controlled folder limits are not physical quota exhaustion; network/auth interruption recovery and broader cloud failure cases remain unverified |
 | Pending upload/recovery protection | 113 local core/WinFsp checks include pending uploads, orphan sessions, recovery and refusal of unsafe removal | These local checks cannot prove every real-cloud interrupted upload scenario |
-| Workspace, language, theme, typography/DPI | Localization/theme checks and earlier native/browser observations; website version 13 rendered on desktop/mobile | Exact candidate desktop UI/DPI matrix not completed; no further Computer Use after owner stopped it |
-| Clean install/upgrade/uninstall | Clean Windows CI install/mount/uninstall passed; 0.6.15 to installed 0.7.0 upgrade preserved checked config and connections | Full standard-user/UAC/reboot-required and pending-queue upgrade matrix is incomplete |
+| Workspace, language, theme, typography/DPI | Localization/theme checks and earlier native/browser observations; website version 13 rendered on desktop/mobile | Owner reauthorized native acceptance. Installed candidate observed EN/dark, VI/light and VI/dark; real 100/125/150% scaling exposed blur on dynamic DPI change. PerMonitorV2 source fix builds but native retest is blocked by desktop control geometry failure |
+| Clean install/upgrade/uninstall | Clean Windows CI install/mount/uninstall passed; 0.6.15 to installed 0.7.0 upgrade preserved checked config and connections | Existing-owner 0.7.0 to exact 0.7.1 upgrade passed, safe preparation returned 0, 7 profiles preserved and 6 connections restored. Standard-user/UAC/reboot-required and deliberate pending-queue upgrade matrix remains incomplete |
 | Distribution licenses | WinFsp signed original/source archive, rclone MIT, Microsoft license/notices included; 37 installer checks passed | Keep third-party notices/signatures intact in future builds |
 | Trusted release signing | Setup Authenticode is NotSigned; signing preparation records possible routes | Owner-selected/approved signing route and valid final signatures/timestamps are absent; no purchase or provider agreement made |
 | Public source and exact artifact | Public release branch includes desktop/website source; Draft 434644422 contains Setup and SHA256, downloaded independently and matched | Draft publication choice pending; draft is not an immutable public release/tag |
@@ -33,9 +33,11 @@ release-070/release-071 JSON reports. Failed runs/retries are retained separatel
 - Decide whether to keep the exact unsigned, provider-limited candidate Draft
   or explicitly publish a limited Beta with the recorded limitations. This does
   not waive the original Stable gates. A concrete Draft and checksum exist.
-- Supply/authorize a DNS-controlled domain and complete Google's review with
-  the project-owner account. The free Pages address does not resolve this gate.
-- Choose and approve a signing route. Preparation is not provider acceptance.
+- Complete the real English OAuth/use demonstration video, then save and submit
+  restricted-scope verification. Domain ownership and branding are already done.
+- SignPath free-program form is prepared. Required personal contact and legal/data
+  consent approval is still pending; no application has been submitted. Preparation
+  is not provider acceptance or a valid signature.
 - Resume any required manual acceptance only if the owner authorizes it; further
   Dropbox/second-OneDrive sign-in was explicitly declined and is not retried.
 - After an accepted downloadable Beta exists, collect actual tester feedback

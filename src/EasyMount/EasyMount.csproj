@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <ApplicationIcon>easymount.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WPF owns startup; declare DPI before its first HWND, not through WinForms startup. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
     <AssemblyTitle>EasyMount</AssemblyTitle>
     <Description>Connect your cloud storage to Windows Explorer.</Description>
   </PropertyGroup>

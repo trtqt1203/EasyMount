@@ -3,7 +3,7 @@
 Prepared 2026-11-05. Draft for the project owner; not submitted or approved.
 Project: easymount-513208. Product: EasyMount, Windows desktop filesystem client.
 Current source: release/0.7.1-beta.2. Current public site:
-https://easymount.pages.dev/ ; privacy: https://easymount.pages.dev/privacy .
+https://easymount.name.vn/ ; privacy: https://easymount.name.vn/privacy .
 
 ## Scope justification for the review form
 
@@ -59,19 +59,26 @@ second account being added independently; avoid exposing personal content.
 Do not replace the consent flow with screenshots from an earlier build.
 No recording or verification submission has been completed by this document.
 
-## Owner inputs and outstanding submission gates
+## Console checkpoint - 2026-11-05
 
-- A domain whose DNS the project owner controls. The Pages address is live,
-  but does not itself provide DNS ownership of the parent pages.dev domain.
-- Verify a DNS-level Domain property with the correct Google project-owner
-  account; then configure homepage/privacy/authorized domain and branding.
-- Confirm the support/developer contacts, declared scopes, final artifact,
-  demo video and complete truthful responses in the Google review form.
-- Retain Testing restrictions until a real change is observed in Console.
-  Switching audience state alone is not restricted-scope verification.
-
-No domain purchase, Production toggle, review submission or approval is
-recorded here. Do not tell users that unrestricted Google login is available.
+- The DNS-controlled domain easymount.name.vn is active with HTTPS. The owner
+  account verified its Search Console Domain property via DNS TXT.
+- The owner explicitly approved Testing to Production. Console now shows
+  In production, External, and 5 users / 100 unverified user cap.
+- The canonical application logo, homepage, privacy URL and authorized domain
+  are saved. Google verified the branding and it was published successfully:
+  "Your branding has been verified and is being shown to users."
+- Both restricted scopes remain UNVERIFIED. Production and verified branding
+  do not constitute restricted-scope approval or remove the unverified cap.
+- Verification preparation now opens. Drive sync client and a 899-character
+  scope justification are entered in Data Access, but Save remains disabled
+  until the required YouTube demonstration URL is supplied. This is an
+  UNSAVED form draft, not a submitted verification request.
+- A real English OAuth/use demonstration covering all project clients,
+  both permission modes and actual operations is still required. Never use
+  fabricated URLs or a static mockup to satisfy this gate.
+- The final submission must include truthful local-only architecture details.
+  Any security-assessment exemption is Google's decision, not ours.
 
 ## Official references checked 2026-11-05
 
