@@ -1,0 +1,17 @@
+{
+  "candidate": "0.7.1-beta.2",
+  "sourceCommit": "bd796ad6c5e0939cb752d346fbd80e676f0c7c4c",
+  "engine": "v1.75.2-easymount.3",
+  "setup": "EasyMount-0.7.1-Setup.exe",
+  "setupBytes": 93373821,
+  "setupSha256": "78997d74b3de5ba21af582665eadbabf9d8612baa86d8d0f7b08d34d24856b47",
+  "signature": "NotSigned",
+  "coreLocalMountChecks": 113,
+  "localizationChecks": 36,
+  "engineChecks": 18,
+  "installerStructureChecks": 33,
+  "installed": false,
+  "freshLoginUiAcceptance": "pending",
+  "ciRun": "https://github.com/trtqt1203/EasyMount/actions/runs/41944881628",
+  "ciConclusion": "pending"
+}

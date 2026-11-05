@@ -39,7 +39,7 @@ This is not a public stable release.
 
 - Complete the remaining gates in RELEASE-PLAN.md: real multi-account tests for all three providers, five-cloud pool/data safety tests, clean Windows install/upgrade/uninstall evidence, signing, sanitized source publication, downloadable release/update verification, and beta feedback period.
 - A passing local suite or installer build must not be reported as completion of those gates.
-- Release source is on branch release/0.7.0-beta.1. Source-only Windows CI passed at commit b4ad58d98f3f111ae324e292aa5c5acc0d288a92: https://github.com/trtqt1203/EasyMount/actions/runs/41855549280 . This rebuilt the pinned engine from source and ran the desktop/local checks on GitHub.
+- Release source is now on branch release/0.7.1-beta.2. Source-only Windows CI passed at commit b4ad58d98f3f111ae324e292aa5c5acc0d288a92: https://github.com/trtqt1203/EasyMount/actions/runs/41855549280 . This rebuilt the pinned engine from source and ran the desktop/local checks on GitHub.
 - The expanded clean install/mount/uninstall run passed for c072f568439be01437e9d32703910dd2358ce685: https://github.com/trtqt1203/EasyMount/actions/runs/41855887074 . It installed Setup on a clean GitHub-hosted Windows runner, matched installed payload hashes, ran actual local WinFsp mount tests, removed EasyMount and preserved shared WinFsp. Its disposable installer uses nonfunctional fixture OAuth and must never be distributed. Upgrade from the previous user version and full desktop UI acceptance remain separate.
 - The same expanded CI passed for installed candidate source 733122fb37dd7ea7a159e22f8a0e2a1ffd096d2e: https://github.com/trtqt1203/EasyMount/actions/runs/41858657532 . The local 0.6.15 upgrade is now evidenced separately; standard-user/UAC, reboot-required and full pending-queue installation matrix still need coverage.
 - User completed Microsoft sign-in. One OneDrive account is configured and passed four real direct-engine upload/download SHA256, Unicode path, rename, edit and fixture deletion checks. A second independent OneDrive account, OneDrive VFS acceptance and Dropbox remain pending.
@@ -58,3 +58,10 @@ This is not a public stable release.
 - The installed candidate now uses the short website address for help/update links. Stable release metadata is unchanged and remains unpublished.
 - Sites version 13 deployed successfully (source d7204a77084c14bbef4c43c225d6a8711265aaa3): preview version 0.7.0, copyright 2026, system typography, English default, persistent VI/EN and light/dark controls in Settings, no pre-created workspace. Desktop and 390px mobile Settings were checked in a browser. The old simulator UI and red warning remain removed.
 - User stopped Computer Use with physical Escape. No further UI automation is being performed without renewed user authorization. Non-UI source, packaging and isolated tests continue; Dropbox interactive sign-in remains pending.
+
+## 0.7.1-beta.2 packaging checkpoint
+
+- Source commit bd796ad6c5e0939cb752d346fbd80e676f0c7c4c was pushed to release/0.7.1-beta.2.
+- Setup built successfully and passed 33 compiled installer checks without installing the app or driver. SHA256: 78997d74b3de5ba21af582665eadbabf9d8612baa86d8d0f7b08d34d24856b47. Authenticode: NotSigned.
+- Installed Windows app remains 0.7.0-beta.1. Native UI and fresh-login acceptance for 0.7.1 remain pending.
+- Updated Windows CI run: https://github.com/trtqt1203/EasyMount/actions/runs/41944881628 (pending at this checkpoint).
