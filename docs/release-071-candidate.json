@@ -1,17 +1,17 @@
 {
   "candidate": "0.7.1-beta.2",
-  "sourceCommit": "bd796ad6c5e0939cb752d346fbd80e676f0c7c4c",
+  "sourceCommit": "57ded36e2cbdb667f65cb5cddff0717c7223e44f",
   "engine": "v1.75.2-easymount.3",
   "setup": "EasyMount-0.7.1-Setup.exe",
-  "setupBytes": 93373821,
-  "setupSha256": "78997d74b3de5ba21af582665eadbabf9d8612baa86d8d0f7b08d34d24856b47",
+  "setupBytes": 93394117,
+  "setupSha256": "b82d6286b3cee72d1be09c6cdc15404b7b036ee42f9d36a5dcb9b3c172de088d",
   "signature": "NotSigned",
   "coreLocalMountChecks": 113,
   "localizationChecks": 36,
   "engineChecks": 18,
-  "installerStructureChecks": 33,
+  "installerStructureChecks": 37,
   "installed": false,
   "freshLoginUiAcceptance": "pending",
-  "ciRun": "https://github.com/trtqt1203/EasyMount/actions/runs/41944881628",
+  "ciRun": "https://github.com/trtqt1203/EasyMount/actions/runs/41945678142",
   "ciConclusion": "pending"
 }

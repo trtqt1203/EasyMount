@@ -68,3 +68,11 @@ This is not a public stable release.
 
 - Engine .3 also passed the four real OneDrive direct-engine checks with an existing OAuth session; see release-071-onedrive-cloud-results.json. Native VFS/fresh-login acceptance is still pending.
 - The 139 tracked website source files from deployed Sites commit d7204a77084c14bbef4c43c225d6a8711265aaa3 are now exported under web/ on the release branch; no production website change was made. All 16 short-host live page/API checks passed again. See WEBSITE-SOURCE.md.
+
+## Runtime notice completion
+
+- Windows CI 41944881628 succeeded for bd796ad6c5e0939cb752d346fbd80e676f0c7c4c, including clean Setup installation, actual local WinFsp mounts and uninstall.
+- Packaging review found missing Microsoft runtime license/notices. Commit 57ded36e2cbdb667f65cb5cddff0717c7223e44f now includes the exact files from the officially verified SDK distribution and validates their embedded MSI hashes.
+- Rebuilt candidate Setup SHA256 is b82d6286b3cee72d1be09c6cdc15404b7b036ee42f9d36a5dcb9b3c172de088d; 37 installer checks passed. Still NotSigned and not installed. The earlier unpublished candidate is preserved privately, not distributed.
+- New packaging CI: https://github.com/trtqt1203/EasyMount/actions/runs/41945678142 (pending at this checkpoint).
+- A Google verification dossier with scope justification/data flow/video requirements is prepared; it is not a submission or approval. See GOOGLE-VERIFICATION-DOSSIER.md.

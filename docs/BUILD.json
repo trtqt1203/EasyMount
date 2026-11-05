@@ -1,8 +1,8 @@
 {
-  "distribution": "Setup only",
-  "engineSha256": "8a525eb183888af062712d68288154c9c51824043f9632bf7c1bd44f692d0821",
-  "upstream": "https://github.com/rclone/rclone/tree/v1.75.2",
   "engineVersion": "v1.75.2-easymount.3",
+  "engineSha256": "8a525eb183888af062712d68288154c9c51824043f9632bf7c1bd44f692d0821",
+  "appVersion": "0.7.1",
   "overlay": "engine/priority.go and engine/apply-overlay.ps1",
-  "appVersion": "0.7.1"
+  "upstream": "https://github.com/rclone/rclone/tree/v1.75.2",
+  "distribution": "Setup only"
 }
