@@ -1,0 +1,55 @@
+{
+  "PreparationExitCode": 0,
+  "SetupExitCode": 0,
+  "Version": "0.7.2-beta.1+f66747fc85fbdcda6444ee8bc943d7c57e0cdbba",
+  "SetupSHA256": "E312E298859A4F7DCF1B1E68ECBC22AB993E8971F775D28FF8E9D6AEA56ED7DC",
+  "Files": [
+    {
+      "Name": "rclone.conf",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "drives.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "desktop-settings.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "ui-settings.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "account-emails.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "account-labels.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "workspaces.json",
+      "Exists": true,
+      "Unchanged": true
+    },
+    {
+      "Name": "runtime-roots.json",
+      "Exists": true,
+      "Unchanged": true
+    }
+  ],
+  "NonTokenConfigurationUnchanged": true,
+  "AppPayloadMatches": true,
+  "EngineMatches": true,
+  "SetupSignatureStatus": "NotSigned",
+  "ObservedOnlineAfterRestart": 6,
+  "ProfileCount": 7,
+  "Scope": "Existing-owner elevated upgrade; no deliberate pending upload, reboot or interactive UAC acceptance"
+}
