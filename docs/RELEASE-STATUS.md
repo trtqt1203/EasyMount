@@ -65,3 +65,6 @@ This is not a public stable release.
 - Setup built successfully and passed 33 compiled installer checks without installing the app or driver. SHA256: 78997d74b3de5ba21af582665eadbabf9d8612baa86d8d0f7b08d34d24856b47. Authenticode: NotSigned.
 - Installed Windows app remains 0.7.0-beta.1. Native UI and fresh-login acceptance for 0.7.1 remain pending.
 - Updated Windows CI run: https://github.com/trtqt1203/EasyMount/actions/runs/41944881628 (pending at this checkpoint).
+
+- Engine .3 also passed the four real OneDrive direct-engine checks with an existing OAuth session; see release-071-onedrive-cloud-results.json. Native VFS/fresh-login acceptance is still pending.
+- The 139 tracked website source files from deployed Sites commit d7204a77084c14bbef4c43c225d6a8711265aaa3 are now exported under web/ on the release branch; no production website change was made. All 16 short-host live page/API checks passed again. See WEBSITE-SOURCE.md.
