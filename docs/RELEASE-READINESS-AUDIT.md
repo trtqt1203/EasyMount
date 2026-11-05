@@ -7,7 +7,7 @@ This audit does not authorize publication or claim Stable acceptance.
 
 | Requirement | Evidence and current result | Remaining gate |
 | --- | --- | --- |
-| .NET 10 migration and reproducible build | Pinned SDK/runtime; clean Windows CI 41945678142 succeeded; BUILD.json | 0.7.2 installed UI and per-monitor process mode observed; source 0e17021 CI succeeded, new version-only candidate CI tracked separately |
+| .NET 10 migration and reproducible build | Pinned SDK/runtime; clean Windows CI 41945678142 succeeded; BUILD.json | 0.7.2 installed UI and per-monitor process mode observed; exact packaged source f66747f CI 42031122476 succeeded, including clean install/mount/uninstall |
 | Google public multi-account OAuth | Five existing identities passed real file tests; five-source VFS passed 24 checks | DNS domain ownership verified; Production and verified/published branding completed with owner approval. Restricted-scope review awaits a real YouTube OAuth/use demo; no submission or data-access approval |
 | OneDrive | Existing account passed direct provider operations, 1 MiB and 128 MiB temporary VFS write/read SHA256, independent cloud verification/deletion and safe unmount; installed email cache repaired | Exact candidate fresh-login/UI and second independent account unverified; further sign-in declined by owner; not every file-size boundary is covered |
 | Dropbox | Implemented provider flow; no real-provider acceptance in this run | Further interactive sign-in declined by owner; do not describe it as verified |
