@@ -76,3 +76,5 @@ This is not a public stable release.
 - Rebuilt candidate Setup SHA256 is b82d6286b3cee72d1be09c6cdc15404b7b036ee42f9d36a5dcb9b3c172de088d; 37 installer checks passed. Still NotSigned and not installed. The earlier unpublished candidate is preserved privately, not distributed.
 - New packaging CI: https://github.com/trtqt1203/EasyMount/actions/runs/41945678142 (pending at this checkpoint).
 - A Google verification dossier with scope justification/data flow/video requirements is prepared; it is not a submission or approval. See GOOGLE-VERIFICATION-DOSSIER.md.
+
+- GitHub draft release 434644422 was created for source 57ded36, tagged v0.7.1-beta.2, with prerelease=true and draft=true. Setup and SHA256 assets were uploaded. Both were downloaded independently from authenticated GitHub asset endpoints and their byte counts/SHA256 matched. No public release/tag/download manifest was enabled. See release-071-draft-assets.json.
