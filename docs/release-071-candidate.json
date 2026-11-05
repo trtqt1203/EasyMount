@@ -13,5 +13,5 @@
   "installed": false,
   "freshLoginUiAcceptance": "pending",
   "ciRun": "https://github.com/trtqt1203/EasyMount/actions/runs/41945678142",
-  "ciConclusion": "pending"
+  "ciConclusion": "success"
 }

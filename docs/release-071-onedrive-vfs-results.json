@@ -1,0 +1,17 @@
+{
+  "provider": "onedrive",
+  "status": "passed",
+  "checks": [
+    "create-unique-disposable-root",
+    "native-service-connect",
+    "mounted-write-read-sha256",
+    "independent-cloud-download-sha256",
+    "mounted-delete-confirmed-on-cloud",
+    "remove-empty-disposable-root",
+    "safe-disconnect-no-logical-drive"
+  ],
+  "failure": null,
+  "cachePreserved": true,
+  "workerMayRemain": false,
+  "scope": "one existing account; temporary VFS; generated fixture; no fresh OAuth"
+}
