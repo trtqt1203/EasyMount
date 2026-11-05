@@ -1,0 +1,15 @@
+html,body,*,*::before,*::after,input,button,select,textarea,::placeholder{font-family:'Segoe UI Variable','Segoe UI',system-ui,-apple-system,sans-serif!important}
+html[data-theme=light]{color-scheme:light;--bg:#f4f8f6;--surface:#fff;--panel:#e5f2ec;--border:#c5d9cf;--border-hi:#87b9a5;--accent-hi:#006d58;--accent-lo:rgba(0,130,100,.1);--text-1:#142d25;--text-2:#3e6657;--text-3:#56786b;--primary:#007d63;--primary-foreground:#fff;--foreground:var(--text-1);--background:var(--bg);--green:var(--primary);--mint:var(--primary)}
+.mini-settings-button{display:block;width:100%;text-align:left;background:transparent;border:0;cursor:pointer}
+.mini-settings-button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.preview-settings{inset:50% auto auto 50%;transform:translate(-50%,-50%);margin:0;box-sizing:border-box;width:min(400px,calc(100vw - 32px));height:auto;min-height:0;max-height:calc(100dvh - 48px);overflow:auto;padding:24px;text-align:left}
+.preview-settings label{display:grid;gap:8px;font-size:14px;margin:18px 0;color:var(--text-1)}
+.preview-settings select{width:100%;min-height:44px;padding:8px 12px;background:var(--panel);border:1px solid var(--border-hi);border-radius:6px;color:var(--text-1)}
+.preview-settings p{font-size:13px;line-height:1.6;color:var(--text-2)}
+.preview-settings>button{min-height:44px;padding:8px 20px;margin-top:12px;border-radius:6px;background:var(--primary);color:var(--primary-foreground);border:0}
+.patched-preview .sample-row,.patched-preview .sample-row:hover,.patched-preview .sample-row:focus,.patched-preview .sample-row.selected-drive{border:0!important;outline:0!important;box-shadow:none!important}
+.patched-preview .sample-row:hover,.patched-preview .sample-row.selected-drive{background:var(--panel)}
+.patched-preview .sample-row:focus-visible .mini-row-name strong{text-decoration:underline;text-underline-offset:3px}
+html[data-theme=light] .app-preview,html[data-theme=light] .jade-preview-content,html[data-theme=light] .jade-preview-sidebar,html[data-theme=light] .mini-topbar,html[data-theme=light] .mini-ready,html[data-theme=light] .about-dialog{background:var(--surface);color:var(--text-1)}
+html[data-theme=light] .feature-card.featured,html[data-theme=light] .download-section{background:var(--panel);color:var(--text-1)}
+html[data-theme=light] .cta-primary,html[data-theme=light] .preview-add{color:#fff}

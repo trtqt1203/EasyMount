@@ -1,0 +1,18 @@
+{
+  "provider": "OneDrive",
+  "accountCount": 1,
+  "engine": "v1.75.2-easymount.3",
+  "mode": "existing OAuth; direct engine; disposable unique fixture",
+  "status": "passed",
+  "checks": [
+    "upload-download-sha256-unicode",
+    "rename",
+    "edit-download-integrity",
+    "delete-disposable-fixture"
+  ],
+  "notCovered": [
+    "second account",
+    "VFS mount",
+    "fresh OAuth on candidate UI"
+  ]
+}
