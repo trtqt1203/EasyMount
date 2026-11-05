@@ -1,4 +1,4 @@
-# EasyMount — 0.7.0-beta.1 candidate
+# EasyMount — 0.7.1-beta.2 candidate
 
 Bản ứng viên đang được kiểm thử, chưa phải bản Stable công khai. App dùng .NET 10 và giao diện Windows hỗ trợ tiếng Anh/Việt, sáng/tối, workspace do người dùng tạo, tìm kiếm và lọc ổ đĩa. Website và API metadata nằm trong `web/`; file và token cloud được xử lý trên máy người dùng, không chuyển qua backend website. Trạng thái kiểm chứng nằm trong [docs/RELEASE-STATUS.md](docs/RELEASE-STATUS.md), điều kiện phát hành nằm trong [docs/RELEASE-PLAN.md](docs/RELEASE-PLAN.md).
 
@@ -6,7 +6,7 @@ Bản ứng viên đang được kiểm thử, chưa phải bản Stable công k
 
 ## Cài đặt
 
-Mục tiêu hỗ trợ chính là Windows 11 x64. Khi có bản phát hành được chấp nhận, dùng Setup từ GitHub Releases được liên kết trên [website chính thức](https://easymount-cloud-drive.trtqt1203.chatgpt.site/). Hiện API chưa công bố bản tải xuống Stable. Bộ cài ứng viên chứa runtime, engine và WinFsp; nếu Windows yêu cầu khởi động lại để hoàn tất driver, thực hiện trước khi kết nối ổ.
+Mục tiêu hỗ trợ chính là Windows 11 x64. Khi có bản phát hành được chấp nhận, dùng Setup từ GitHub Releases được liên kết trên [website chính thức](https://easymount.pages.dev/). Hiện API chưa công bố bản tải xuống Stable. Bộ cài ứng viên chứa runtime, engine và WinFsp; nếu Windows yêu cầu khởi động lại để hoàn tất driver, thực hiện trước khi kết nối ổ.
 
 Chỉ phát hành bản Setup. Thư mục payload do build tạo ra trong `work/` chỉ phục vụ đóng gói và kiểm thử, không phải bản portable để phân phối.
 
@@ -57,7 +57,7 @@ Cấu hình nằm ở `%LOCALAPPDATA%\EasyMount`: `drives.json`, `rclone.conf`, 
 
 ## Build và kiểm tra
 
-Cần SDK .NET 10.0.403 theo `global.json`, Go 1.26 trở lên và WiX 5.0.2. CI ghim Go 1.27.3 và các GitHub Actions theo commit. Engine là rclone v1.75.2 với overlay EasyMount .2 trong `engine/`; bản upstream không có bộ chọn ghi này. CI nguồn không thay thế kiểm thử cloud thật, Windows sạch hoặc chữ ký phát hành.
+Cần SDK .NET 10.0.403 theo `global.json`, Go 1.26 trở lên và WiX 5.0.2. CI ghim Go 1.27.3 và các GitHub Actions theo commit. Engine là rclone v1.75.2 với overlay EasyMount .3 trong `engine/`; bản upstream không có bộ chọn ghi này. CI nguồn không thay thế kiểm thử cloud thật, Windows sạch hoặc chữ ký phát hành.
 
 ```powershell
 .\build-setup.ps1 -DotnetPath 'C:\path\dotnet.exe' -GoPath 'C:\path\go.exe'
@@ -78,7 +78,7 @@ Xem `docs/VALIDATION.md` về kiểm chứng và phần chưa được thử. T�
 ## Repo và website
 
 - Mã nguồn: https://github.com/trtqt1203/EasyMount
-- Trang chủ: https://easymount-cloud-drive.trtqt1203.chatgpt.site/
+- Trang chủ: https://easymount.pages.dev/
 - Chính sách riêng tư: xem liên kết Privacy trên trang chủ. Tên miền và hồ sơ Google vẫn cần xác minh trước phát hành rộng.
 
 Build payload/Setup yêu cầu `oauth-clients.json` có định danh Google Desktop client. Sao chép cấu trúc từ `oauth-clients.example.json`, điền client của bạn, hoặc truyền `-OAuthClientsPath` tới file riêng. Cấu hình rỗng bị từ chối; không còn tự dùng ví dụ rỗng để đóng gói. Không commit file đó, token, rclone.conf, drives.json hoặc thông tin tài khoản cá nhân. Tài khoản người dùng vẫn phải được Google cho phép và tự cấp quyền.

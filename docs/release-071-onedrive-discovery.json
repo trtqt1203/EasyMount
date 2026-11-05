@@ -1,0 +1,8 @@
+{
+  "provider": "OneDrive",
+  "mode": "authenticated discovery using temporary config; existing token; no fresh OAuth or cloud writes",
+  "engine": "v1.75.2-easymount.3",
+  "choiceCount": 4,
+  "canonicalDefaultFirst": true,
+  "status": "passed"
+}

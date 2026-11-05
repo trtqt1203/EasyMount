@@ -4,10 +4,11 @@
 const origin = 'https://easymount-cloud-drive.trtqt1203.chatgpt.site';
 export default {
   async fetch(request) {
-    if (!['GET', 'HEAD'].includes(request.method)) {
+    const url = new URL(request.url);
+    const previewPost = request.method === 'POST' && url.pathname === '/api/pool-preview';
+    if (!['GET', 'HEAD'].includes(request.method) && !previewPost) {
       return new Response('Method not allowed', {status: 405, headers: {Allow: 'GET, HEAD'}});
     }
-    const url = new URL(request.url);
     const target = new URL(origin);
     target.pathname = url.pathname;
     target.search = url.search;
@@ -16,8 +17,29 @@ export default {
       'range', 'rsc', 'next-router-state-tree', 'next-router-prefetch', 'next-url']) {
       if (request.headers.has(name)) headers.set(name, request.headers.get(name));
     }
+    let body;
+    if (previewPost) {
+      const reader = request.body?.getReader(), chunks = [];
+      let size = 0;
+      if (reader) {
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > 32768) {
+            await reader.cancel();
+            return new Response('Request too large', {status: 413});
+          }
+          chunks.push(value);
+        }
+      }
+      body = new Uint8Array(size);
+      let offset = 0;
+      for (const chunk of chunks) {body.set(chunk, offset); offset += chunk.byteLength;}
+      if (request.headers.has('content-type')) headers.set('content-type', request.headers.get('content-type'));
+    }
     try {
-      const upstream = await fetch(target, {method: request.method, headers, redirect: 'manual'});
+      const upstream = await fetch(target, {method: request.method, headers, body, redirect: 'manual'});
       const response = new Response(upstream.body, upstream);
       response.headers.delete('set-cookie');
       const location = response.headers.get('location');

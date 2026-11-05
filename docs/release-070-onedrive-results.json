@@ -1,0 +1,22 @@
+{
+  "provider": "OneDrive",
+  "accountCount": 1,
+  "mode": "fresh user OAuth then direct engine; primary drive selected manually",
+  "results": [
+    {
+      "status": "passed",
+      "checks": [
+        "upload-download-sha256-unicode",
+        "rename",
+        "edit-download-integrity",
+        "delete-disposable-fixture"
+      ]
+    }
+  ],
+  "notCovered": [
+    "second account",
+    "VFS mount",
+    "automatic default-drive selection fix",
+    "email label fallback"
+  ]
+}

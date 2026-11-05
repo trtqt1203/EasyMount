@@ -5,7 +5,10 @@ release metadata through a short Cloudflare address. The Sites deployment remain
 the origin; this is not a full hosting migration. It needs no Cloudflare API key
 at runtime, database, cloud tokens or Node.js compatibility flag.
 
-Only GET/HEAD and a small public rendering/cache-header allowlist are forwarded.
+GET/HEAD and a small public rendering/cache-header allowlist are forwarded.
+The existing POST /api/pool-preview contract is also forwarded, with a bounded
+32 KiB body; other POST paths remain disallowed. This preserves the public API
+without restoring the removed simulator UI.
 Cookies and Authorization are never forwarded; upstream cookies are stripped.
 Desktop file transfers remain direct to each cloud provider.
 

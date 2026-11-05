@@ -44,3 +44,19 @@ $anchor = 'if runtime.GOOS == "windows" && len(vol) > 32 {'
 if (-not $s.Contains($anchor)) { throw 'rclone volume name handling changed.' }
 $s = $s.Replace($anchor, 'if runtime.GOOS == "windows" && !o.NetworkMode && !strings.HasPrefix(vol, `\\`) && len(vol) > 32 {')
 [IO.File]::WriteAllText($utils, $s)
+
+# Prefer the canonical /me/drive over Graph's internal personal-drive containers.
+$oneDrive = Join-Path $SourceRoot 'backend\onedrive\onedrive.go'
+$s = Get-Content -LiteralPath $oneDrive -Raw
+$start = $s.IndexOf('if meDriveErr == nil {')
+if ($start -lt 0) { throw 'OneDrive default-drive discovery changed.' }
+$end = $s.IndexOf('} else if drivesErr != nil {', $start)
+if ($start -lt 0 -or $end -lt $start) { throw 'OneDrive default-drive discovery changed.' }
+$block = $s.Substring($start, $end - $start)
+if (-not $block.Contains('for _, drive := range drives.Drives {') -or -not $block.Contains('drives.Drives = append(drives.Drives, meDrive)')) { throw 'OneDrive choice ordering changed.' }
+$fixed = $block.Replace('for _, drive := range drives.Drives {', 'for i, drive := range drives.Drives {')
+$fixed = $fixed.Replace('found = true', "copy(drives.Drives[1:i+1], drives.Drives[:i])`n`t`t`t`t`t`tdrives.Drives[0] = meDrive`n`t`t`t`t`t`tfound = true")
+$fixed = $fixed.Replace('drives.Drives = append(drives.Drives, meDrive)', 'drives.Drives = append([]api.DriveResource{meDrive}, drives.Drives...)')
+$s = $s.Remove($start, $end - $start).Insert($start, $fixed)
+[IO.File]::WriteAllText($oneDrive, $s)
+Copy-Item (Join-Path $PSScriptRoot 'onedrive_default_test.go') (Join-Path $SourceRoot 'backend\onedrive\easymount_default_test.go') -Force

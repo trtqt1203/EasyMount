@@ -471,5 +471,8 @@
   "Đổi giữa giao diện sáng và tối": "Switch between light and dark appearance",
   "Sáng": "Light",
   "Tối": "Dark",
-  "Áp dụng ngay và lưu cho lần mở sau": "Applied immediately and remembered next time"
+  "Áp dụng ngay và lưu cho lần mở sau": "Applied immediately and remembered next time",
+  "Sử dụng ổ OneDrive này?": "Use this OneDrive?",
+  "Xác nhận ổ OneDrive đã chọn để hoàn tất kết nối.": "Confirm the selected OneDrive to finish connecting.",
+  "Xác nhận": "Confirm"
 }

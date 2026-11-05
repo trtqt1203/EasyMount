@@ -178,8 +178,9 @@ public sealed class SetupWindow : Window
     {
         var q = step?.Option ?? throw new InvalidOperationException(L.T("Dịch vụ chưa cung cấp bước tiếp theo. Hủy và thử lại."));
         content.Children.Clear();
-        var label = q.Name switch { "url" => L.T("Địa chỉ máy chủ"), "vendor" => L.T("Loại dịch vụ WebDAV"), "user" => L.T("Tên đăng nhập"), "pass" => L.T("Mật khẩu"), "client_id" => "OAuth Client ID", "client_secret" => "OAuth Client Secret", "config_shared_client_id" => L.T("Thiết lập kết nối Google Drive"), "config_type" => L.T("Loại tài khoản OneDrive"), "config_driveid" => L.T("Chọn ổ OneDrive"), "config_change_team_drive" => L.T("Sử dụng Shared Drive?"), "config_team_drive" => L.T("Chọn Shared Drive"), _ => q.Name.Replace('_', ' ') };
+        var label = q.Name switch { "url" => L.T("Địa chỉ máy chủ"), "vendor" => L.T("Loại dịch vụ WebDAV"), "user" => L.T("Tên đăng nhập"), "pass" => L.T("Mật khẩu"), "client_id" => "OAuth Client ID", "client_secret" => "OAuth Client Secret", "config_shared_client_id" => L.T("Thiết lập kết nối Google Drive"), "config_type" => L.T("Loại tài khoản OneDrive"), "config_driveid" => L.T("Chọn ổ OneDrive"), "config_drive_ok" => L.T("Sử dụng ổ OneDrive này?"), "config_change_team_drive" => L.T("Sử dụng Shared Drive?"), "config_team_drive" => L.T("Chọn Shared Drive"), _ => q.Name.Replace('_', ' ') };
         content.Children.Add(new TextBlock { Text = label, FontSize = 23, FontWeight = FontWeights.SemiBold });
+        if (q.Name == "config_drive_ok") q.Help = L.T("Xác nhận ổ OneDrive đã chọn để hoàn tất kết nối.");
         var help = q.Name == "config_shared_client_id" ? L.T("Kết nối Google Drive dùng chung của rclone đang ngừng hoạt động trong năm 2026. Nên chọn Không để nhập OAuth client riêng. Bản EasyMount dành cho cộng đồng có thể cấu hình sẵn thông tin này để người dùng chỉ cần đăng nhập.\n\nBạn vẫn muốn thử kết nối dùng chung cũ?") : q.Help;
         content.Children.Add(new TextBlock { Text = help, Foreground = (Brush)System.Windows.Application.Current.FindResource("Muted"), Margin = new Thickness(0, 12, 0, 15) });
         if (q.Name is "client_id" or "client_secret" or "config_shared_client_id")
@@ -192,14 +193,18 @@ public sealed class SetupWindow : Window
         choices.Items.Clear(); answer.Text = IsSensitive(q) ? "" : q.DefaultStr; password.Clear();
         if (q.Examples is not null && q.Examples.Count > 0)
         {
-            foreach (var option in q.Examples) choices.Items.Add(option);
+            foreach (var option in q.Examples)
+            {
+                if (option.Value is "true" or "false") option.Help = L.T(option.Value == "true" ? "Có" : "Không");
+                choices.Items.Add(option);
+            }
             choices.SelectedItem = q.Examples.FirstOrDefault(e => e.Value == q.DefaultStr);
             if (choices.SelectedIndex < 0 && (q.Exclusive || q.Name == "config_driveid")) choices.SelectedIndex = 0;
             if (choices.SelectedItem is ConfigChoice selected && (q.Exclusive || q.Name == "config_driveid")) answer.Text = selected.Value;
-            Field(q.Exclusive || q.Name == "config_driveid" ? L.T("Chọn ổ lưu trữ") : L.T("Giá trị gợi ý (tùy chọn)"), choices);
+            Field(q.Name == "config_drive_ok" ? L.T("Xác nhận") : q.Exclusive || q.Name == "config_driveid" ? L.T("Chọn ổ lưu trữ") : L.T("Giá trị gợi ý (tùy chọn)"), choices);
         }
         if (IsSensitive(q)) Field(L.T("Nhập thông tin bảo mật"), password);
-        else if (!q.Exclusive) Field(q.Name == "config_driveid" ? L.T("Mã ổ (được điền từ lựa chọn bên trên)") : q.Required ? L.T("Giá trị (bắt buộc)") : L.T("Giá trị (có thể để mặc định)"), answer);
+        else if (!q.Exclusive && !(q.Name == "config_driveid" && q.Examples is { Count: > 0 })) Field(q.Name == "config_driveid" ? L.T("Mã ổ (được điền từ lựa chọn bên trên)") : q.Required ? L.T("Giá trị (bắt buộc)") : L.T("Giá trị (có thể để mặc định)"), answer);
         choices.SelectionChanged += ApplyExample;
         next.Content = L.T("Tiếp tục");
         status.Text = string.IsNullOrWhiteSpace(step!.Error) ? L.T("Chọn hoặc điền thông tin, sau đó bấm Tiếp tục.") : step.Error;

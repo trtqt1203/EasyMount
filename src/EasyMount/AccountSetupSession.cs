@@ -19,7 +19,7 @@ public sealed class ConfigChoice
 {
     public string Value { get; set; } = "";
     public string Help { get; set; } = "";
-    public override string ToString() => Value == "true" ? "Có" : Value == "false" ? "Không" : (string.IsNullOrWhiteSpace(Help) ? Value : Help.Split('\n')[0]);
+    public override string ToString() => !string.IsNullOrWhiteSpace(Help) ? Help.Split('\n')[0] : Value == "true" ? "Yes" : Value == "false" ? "No" : Value;
 }
 public sealed class ConfigQuestion
 {
@@ -210,17 +210,43 @@ public sealed class AccountSetupSession : IAsyncDisposable
                 _ => new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)")
             };
             using var response = await http.SendAsync(request);
+            if (type == "onedrive")
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    using var profile = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                    if (ParseOneDriveEmail(profile.RootElement) is string email) return email;
+                }
+                // Files permissions can expose the user's own drive identity when
+                // /me is unavailable. No additional profile permission is requested.
+                using var ownerResponse = await http.GetAsync("https://graph.microsoft.com/v1.0/me/drive?$select=owner");
+                ownerResponse.EnsureSuccessStatusCode();
+                using var owner = JsonDocument.Parse(await ownerResponse.Content.ReadAsStringAsync());
+                return ParseOneDriveEmail(owner.RootElement);
+            }
             response.EnsureSuccessStatusCode();
             using var info = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var root = info.RootElement;
             return type switch
             {
-                "onedrive" => root.TryGetProperty("mail", out var mail) && mail.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(mail.GetString()) ? mail.GetString() : root.GetProperty("userPrincipalName").GetString(),
                 "dropbox" => root.GetProperty("email").GetString(),
                 _ => root.GetProperty("user").GetProperty("emailAddress").GetString()
             };
         }
         catch { return null; } // Missing identity must not block existing mounts.
+    }
+
+    internal static string? ParseOneDriveEmail(JsonElement root)
+    {
+        static string? Read(JsonElement value, string key)
+        {
+            if (value.ValueKind != JsonValueKind.Object || !value.TryGetProperty(key, out var item) || item.ValueKind != JsonValueKind.String) return null;
+            var email = item.GetString()?.Trim();
+            return !string.IsNullOrWhiteSpace(email) && email.Contains('@') && !email.Any(char.IsControl) ? email : null;
+        }
+        if ((Read(root, "mail") ?? Read(root, "userPrincipalName")) is string profileEmail) return profileEmail;
+        if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("owner", out var owner) && owner.ValueKind == JsonValueKind.Object && owner.TryGetProperty("user", out var user)) return Read(user, "email");
+        return null;
     }
 
     public async Task CompleteAsync()

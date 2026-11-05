@@ -1,0 +1,97 @@
+{
+  "checkedAt": "2026-11-04T15:38:43.5091589Z",
+  "from": "0.6.15",
+  "to": "0.7.0-beta.1+733122fb37dd7ea7a159e22f8a0e2a1ffd096d2e",
+  "sourceCommit": "733122fb37dd7ea7a159e22f8a0e2a1ffd096d2e",
+  "safeShutdownExit": 0,
+  "setupExit": 0,
+  "setupSha256": "e907e9f08be73ab052afef32768958fb4588c15379878052c08a3ee0d5523828",
+  "signature": "NotSigned",
+  "installedPayloadHashesMatched": true,
+  "configuration": [
+    {
+      "file": "drives.json",
+      "unchanged": true
+    },
+    {
+      "file": "desktop-settings.json",
+      "unchanged": true
+    },
+    {
+      "file": "workspaces.json",
+      "unchanged": true
+    },
+    {
+      "file": "rclone.conf",
+      "unchanged": true
+    },
+    {
+      "file": "account-labels.json",
+      "unchanged": true
+    },
+    {
+      "file": "account-emails.json",
+      "unchanged": true
+    }
+  ],
+  "mountsBefore": [
+    {
+      "letter": "R:",
+      "present": true
+    },
+    {
+      "letter": "S:",
+      "present": true
+    },
+    {
+      "letter": "T:",
+      "present": true
+    },
+    {
+      "letter": "U:",
+      "present": true
+    },
+    {
+      "letter": "V:",
+      "present": true
+    },
+    {
+      "letter": "W:",
+      "present": false
+    }
+  ],
+  "mountsAfter": [
+    {
+      "letter": "R:",
+      "present": true
+    },
+    {
+      "letter": "S:",
+      "present": true
+    },
+    {
+      "letter": "T:",
+      "present": true
+    },
+    {
+      "letter": "U:",
+      "present": true
+    },
+    {
+      "letter": "V:",
+      "present": true
+    },
+    {
+      "letter": "W:",
+      "present": false
+    }
+  ],
+  "runtime": "10.0.14",
+  "go": "1.27.3",
+  "nativeUiObserved": [
+    "Windows x64 · v0.7.0",
+    "5 / 6 drives online",
+    "Auto-connect completed."
+  ],
+  "scope": "Existing developer Windows profile; not the entire clean-machine/standard-user/reboot matrix"
+}

@@ -1,0 +1,44 @@
+name: Bug report
+description: Report an EasyMount problem using sanitized evidence.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach rclone.conf, tokens, passwords, private file paths, full logs or unredacted account screenshots.
+        Use account aliases and generated test files. Preserve pending VFS cache when reporting upload/recovery failures.
+  - type: input
+    id: version
+    attributes:
+      label: EasyMount version and Setup SHA256
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows edition/build and display scale
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Google Drive
+        - OneDrive
+        - Dropbox
+        - Pooled drive
+        - Setup / upgrade / uninstall
+        - Workspace / interface
+        - Website / update check
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps, expected result and observed result
+      description: Use disposable examples and account aliases; mention pending uploads without sharing file contents.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence and retry results
+      description: Remove credentials, email addresses, private filenames and paths. Keep the original failure separate from retries.

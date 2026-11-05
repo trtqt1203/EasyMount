@@ -1,0 +1,61 @@
+{
+  "candidate": "0.7.0-beta.1",
+  "sourceCommit": "733122fb37dd7ea7a159e22f8a0e2a1ffd096d2e",
+  "mode": "existing live Windows VFS mounts; independent Google Drive API reads",
+  "fixtureBytes": 1048576,
+  "results": [
+    {
+      "drive": "R:",
+      "status": "passed",
+      "checks": [
+        "mounted-write-read-sha256",
+        "independent-cloud-download-sha256",
+        "mounted-delete-confirmed-on-cloud"
+      ]
+    },
+    {
+      "drive": "S:",
+      "status": "passed",
+      "checks": [
+        "mounted-write-read-sha256",
+        "independent-cloud-download-sha256",
+        "mounted-delete-confirmed-on-cloud"
+      ]
+    },
+    {
+      "drive": "T:",
+      "status": "passed",
+      "checks": [
+        "mounted-write-read-sha256",
+        "independent-cloud-download-sha256",
+        "mounted-delete-confirmed-on-cloud"
+      ]
+    },
+    {
+      "drive": "U:",
+      "status": "passed",
+      "checks": [
+        "mounted-write-read-sha256",
+        "independent-cloud-download-sha256",
+        "mounted-delete-confirmed-on-cloud"
+      ]
+    },
+    {
+      "drive": "V:",
+      "status": "passed",
+      "checks": [
+        "mounted-write-read-sha256",
+        "independent-cloud-download-sha256",
+        "mounted-delete-confirmed-on-cloud"
+      ]
+    }
+  ],
+  "notCovered": [
+    "fresh OAuth",
+    "OneDrive",
+    "Dropbox",
+    "large files",
+    "network/auth interruption",
+    "pool mount"
+  ]
+}

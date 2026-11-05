@@ -17,6 +17,17 @@ void Check(bool value, string description)
     Console.WriteLine("PASS " + description);
     passed++;
 }
+foreach (var sample in new[] {
+    (Json: "{\"mail\":\"user@example.com\"}", Email: "user@example.com"),
+    (Json: "{\"mail\":null,\"userPrincipalName\":\"member@example.com\"}", Email: "member@example.com"),
+    (Json: "{\"owner\":{\"user\":{\"email\":\"owner@example.com\"}}}", Email: "owner@example.com"),
+    (Json: "{\"owner\":{\"user\":{\"email\":\"not an email\"}}}", Email: (string?)null),
+    (Json: "{}", Email: (string?)null)
+})
+{
+    using var identity = System.Text.Json.JsonDocument.Parse(sample.Json);
+    Check(AccountSetupSession.ParseOneDriveEmail(identity.RootElement) == sample.Email, "OneDrive identity parser handles profile/drive fallback without inventing an email");
+}
 Check(DriveProfile.ResolveName("  Tài liệu  ", Array.Empty<DriveProfile>()) == "Tài liệu", "custom drive name is preserved and trimmed");
 Check(DriveProfile.ResolveName(" ", new[] { new DriveProfile { Name="drive1" }, new DriveProfile { Name="Drive3" } }) == "Drive2", "blank drive names use first available Drive number without case collisions");
 var renamed = new DriveProfile {Name="Drive1"};

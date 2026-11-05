@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import re
+import xml.etree.ElementTree as ET
 
 engine = Path(sys.argv[1]).resolve()
 passed = 0
@@ -45,7 +46,8 @@ with tempfile.TemporaryDirectory(prefix='EasyMount-pool-') as tmp:
         src.write_bytes(content)
         return run('copyto', str(src), 'easymount_test_pool:' + name, '--ignore-times', ok=ok)
 
-    check('v1.75.2-easymount.2' in run('version').stdout, 'the modified priority engine is the tested executable')
+    expected_version = ET.parse(Path(__file__).resolve().parents[1] / 'Directory.Build.props').findtext('.//EngineVersion')
+    check(bool(expected_version) and expected_version in run('version').stdout, 'the modified priority engine is the tested executable')
     check('cmount' in run('version').stdout, 'Windows mount support is compiled in')
     upload('a.txt', b'aaaa')
     check((targets[0] / 'a.txt').read_bytes() == b'aaaa' and not (targets[1] / 'a.txt').exists(), 'first file uses the highest-priority cloud')

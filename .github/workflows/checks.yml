@@ -34,7 +34,11 @@ jobs:
         shell: pwsh
         run: ./engine/build-engine.ps1 -WorkDirectory work/engine-source -OutputPath work/engine/rclone.exe
       - name: Core checks with disposable local storage
-        run: dotnet run --project tests/EasyMount.Checks.csproj -- work/engine/rclone.exe
+        shell: pwsh
+        run: |
+          $output = @(dotnet run --project tests/EasyMount.Checks.csproj -- work/engine/rclone.exe)
+          $output | Write-Output
+          if ($LASTEXITCODE -ne 0 -or -not ($output -match '^RESULT: \d+ checks passed\.')) { throw 'Core check runner did not report its own result.' }
       - name: Priority engine integration
         run: python tests/check-pool.py work/engine/rclone.exe
       - name: Build disposable installer fixture

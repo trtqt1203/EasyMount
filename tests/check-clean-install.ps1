@@ -30,8 +30,9 @@ try {
         }
     }
     Write-Host 'PASS clean Setup installation matches the built app and engine'
-    & $DotnetPath run --project (Join-Path $PSScriptRoot 'EasyMount.Checks.csproj') -- (Join-Path $installed 'tools/rclone.exe') --mounts
-    if ($LASTEXITCODE -ne 0) { throw 'Installed engine real WinFsp lifecycle checks failed.' }
+    $output = @(& $DotnetPath run --project (Join-Path $PSScriptRoot 'EasyMount.Checks.csproj') -- (Join-Path $installed 'tools/rclone.exe') --mounts)
+    $output | Write-Output
+    if ($LASTEXITCODE -ne 0 -or -not ($output -match '^RESULT: .*Local WinFsp mount tests requested: True\.')) { throw 'Installed engine real WinFsp lifecycle checks failed or the wrong runner executed.' }
 } finally {
     Run-Setup 'uninstall'
 }

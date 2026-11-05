@@ -28,6 +28,13 @@ try {
   called = null;
   assert.equal((await worker.fetch(new Request('https://easymount.pages.dev/', {method:'POST'}))).status, 405);
   assert.equal(called, null);
+  await worker.fetch(new Request('https://easymount.pages.dev/api/pool-preview', {method:'POST',headers:{'content-type':'application/json',authorization:'Bearer fixture'},body:'{"sources":[]}'}));
+  assert.equal(new TextDecoder().decode(called.options.body), '{"sources":[]}');
+  assert.equal(called.options.headers.get('content-type'), 'application/json');
+  assert.equal(called.options.headers.has('authorization'), false);
+  called = null;
+  assert.equal((await worker.fetch(new Request('https://easymount.pages.dev/api/pool-preview', {method:'POST',body:'x'.repeat(32769)}))).status, 413);
+  assert.equal(called, null);
   globalThis.fetch = async () => {throw new Error('fixture network failure');};
   assert.equal((await worker.fetch(request)).status, 502);
   console.log('PASS fixed-origin routing, credential isolation, redirects, streamed response and error handling');
