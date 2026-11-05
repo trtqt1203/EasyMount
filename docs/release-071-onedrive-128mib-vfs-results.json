@@ -1,0 +1,24 @@
+{
+  "provider": "onedrive",
+  "accountCount": 1,
+  "fixtureBytes": 134217728,
+  "status": "passed",
+  "checks": [
+    "create-unique-disposable-roots",
+    "native-service-connect",
+    "mounted-write-read-sha256",
+    "independent-cloud-download-sha256",
+    "mounted-delete-confirmed-on-cloud",
+    "remove-empty-disposable-roots",
+    "safe-disconnect-no-logical-drive"
+  ],
+  "failure": null,
+  "cachePreserved": true,
+  "workerMayRemain": false,
+  "scope": "one existing OAuth account; temporary VFS; generated fixture; no interruption or fresh-login testing",
+  "engine": "v1.75.2-easymount.3",
+  "candidateServiceSource": "57ded36e2cbdb667f65cb5cddff0717c7223e44f",
+  "remainingSessionLeases": 0,
+  "freeSpacePreflightPassed": true,
+  "interruptionRecoveryTested": false
+}

@@ -3,13 +3,15 @@ using System.Text.Json;
 using EasyMount;
 
 // Opt-in real-cloud acceptance, never part of unattended fixture CI.
-if (args.Length != 5) throw new ArgumentException("Supply engine, private config, remote name, NEW private work directory and Python executable.");
+if (args.Length is not (5 or 6)) throw new ArgumentException("Supply engine, private config, remote name, NEW private work directory, Python executable and optional fixture MiB (1 or 128).");
 var engine = Path.GetFullPath(args[0]);
 var sourceConfig = Path.GetFullPath(args[1]);
 var remotes = args[2].Split(',');
 if (remotes.Length is not (1 or 5) || remotes.Distinct(StringComparer.OrdinalIgnoreCase).Count() != remotes.Length)
     throw new ArgumentException("Supply one remote or five distinct comma-separated Google Drive remotes.");
 var isPool = remotes.Length == 5;
+var fixtureMiB = args.Length == 6 ? int.Parse(args[5]) : 1;
+if (fixtureMiB is not (1 or 128) || isPool && fixtureMiB != 1) throw new ArgumentException("Use a 1 or 128 MiB single-drive fixture; pool fixtures must be 1 MiB.");
 var work = Path.GetFullPath(args[3]);
 var repo = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../.."));
 if (Directory.Exists(work) || work.StartsWith(repo + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
@@ -47,6 +49,7 @@ try
     var info = new ProcessStartInfo(args[4]) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
     foreach (var item in new[] { Path.Combine(repo, "tests", isPool ? "check-mounted-pool.py" : "check-mounted-cloud.py"), "--engine", engine, "--config", service.ConfigPath,
         "--profiles", Path.Combine(work, "drives.json"), "--report", Path.Combine(work, "mounted-results.json") }) info.ArgumentList.Add(item);
+    if (!isPool) { info.ArgumentList.Add("--fixture-mib"); info.ArgumentList.Add(fixtureMiB.ToString()); }
     using var check = Process.Start(info) ?? throw new IOException("Cannot start mounted-file checks.");
     var output = check.StandardOutput.ReadToEndAsync(); var error = check.StandardError.ReadToEndAsync();
     await check.WaitForExitAsync(); await output; await error;
@@ -69,8 +72,10 @@ finally
         if (disconnected) checks.Add("safe-disconnect-no-logical-drive");
     }
     catch { failure ??= "SafeDisconnectRefused"; }
-    var record = new { provider, accountCount = remotes.Length, status = passed && disconnected ? "passed" : "failed", checks,
-        failure, cachePreserved = true, workerMayRemain = !disconnected, scope = "existing OAuth; temporary VFS; generated fixtures; pool limits 1.5 MiB per source, not physical quota exhaustion" };
+    var record = new { provider, accountCount = remotes.Length, fixtureBytes = fixtureMiB * 1048576, status = passed && disconnected ? "passed" : "failed", checks,
+        failure, cachePreserved = true, workerMayRemain = !disconnected,
+        scope = isPool ? "existing OAuth; temporary VFS; generated fixtures; pool limits 1.5 MiB per source, not physical quota exhaustion"
+            : "one existing OAuth account; temporary VFS; generated fixture; no interruption or fresh-login testing" };
     await File.WriteAllTextAsync(Path.Combine(work, "summary.json"), JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true }));
     Console.WriteLine($"{provider} VFS: {record.status}; {checks.Count} checks; disconnected={disconnected}. Private work directory retained.");
 }

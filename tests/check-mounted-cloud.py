@@ -16,6 +16,7 @@ p.add_argument('--engine', required=True)
 p.add_argument('--config', required=True)
 p.add_argument('--profiles', required=True)
 p.add_argument('--report', required=True)
+p.add_argument('--fixture-mib', type=int, choices=[1, 128], default=1)
 a = p.parse_args()
 profiles = json.loads(Path(a.profiles).read_text(encoding='utf-8-sig'))
 results = []
@@ -24,11 +25,11 @@ results = []
 def cloud(*command):
     return subprocess.run([a.engine, *command, '--config', a.config, '--retries', '1',
                            '--low-level-retries', '1', '--contimeout', '10s', '--timeout', '20s'],
-                          capture_output=True, timeout=35)
+                          capture_output=True, timeout=180 if a.fixture_mib > 1 else 35)
 
 
 def eventually(predicate, description):
-    end = time.monotonic() + 120
+    end = time.monotonic() + (300 if a.fixture_mib > 1 else 120)
     while time.monotonic() < end:
         if predicate():
             return
@@ -48,9 +49,9 @@ for profile in profiles:
     remote_root = profile['Remote'].rstrip('/')
     remote_dir = remote_root + ('' if remote_root.endswith(':') else '/') + folder
     remote_file = remote_dir + '/' + name
-    record = {'letter': profile['Letter'], 'fixtureFolder': folder, 'checks': []}
+    record = {'letter': profile['Letter'], 'fixtureFolder': folder, 'fixtureBytes': a.fixture_mib * 1048576, 'checks': []}
     try:
-        data = hashlib.sha256(folder.encode()).digest() * 32768
+        data = hashlib.sha256(folder.encode()).digest() * (32768 * a.fixture_mib)
         expected = hashlib.sha256(data).hexdigest()
         local_dir.mkdir()
         local_file = local_dir / name
