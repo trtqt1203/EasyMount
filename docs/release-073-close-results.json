@@ -1,0 +1,15 @@
+{
+  "CheckedAt": "2026-11-06T00:04:00.6351271+07:00",
+  "InstalledVersion": "0.7.3-beta.1+f8a823d9846d91ba27e136ea9f0b9bd21e4a33d1",
+  "SetupExitCode": 0,
+  "ProfilesUnchanged": true,
+  "PendingWriteBlockedGuiClose": true,
+  "LocalBackendFileVerified": true,
+  "LocalFixtureUnmounted": true,
+  "PersonalAppCloseDuringAutoConnectVerified": true,
+  "RemainingLetters": [],
+  "AppProcesses": 0,
+  "WorkerProcesses": 0,
+  "ExplorerOnlyLocalCUnderThisPC": true,
+  "CI": "Not verified: GitHub DNS resolution failed"
+}
