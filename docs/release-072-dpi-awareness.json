@@ -1,0 +1,14 @@
+[
+  {
+    "build": "dpi-qa",
+    "querySucceeded": true,
+    "dpiAwareness": 2,
+    "meaning": "per-monitor aware"
+  },
+  {
+    "build": "installed-beta2",
+    "querySucceeded": true,
+    "dpiAwareness": 1,
+    "meaning": "system aware"
+  }
+]
