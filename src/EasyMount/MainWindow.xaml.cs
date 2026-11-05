@@ -22,7 +22,7 @@ public partial class MainWindow : Window
     private readonly DriveService service;
     private readonly Forms.NotifyIcon tray;
     private readonly UninstallSupport uninstall;
-    private bool busy, exiting, canSave = true;
+    private bool busy, exiting, closeAfterOperation, canSave = true;
     private bool gridView;
     private WorkspaceStore workspaces = new();
     private DesktopSettings settings = new();
@@ -290,7 +290,15 @@ public partial class MainWindow : Window
         StatusText.Text = L.T("Đang xử lý…");
         try { await action(); StatusText.Text = done; }
         catch (Exception ex) { StatusText.Text = ex.Message; MessageBox.Show(this, ex.Message, "EasyMount", MessageBoxButton.OK, MessageBoxImage.Information); }
-        finally { busy = false; IsEnabled = true; RefreshSummary(); }
+        finally
+        {
+            busy = false; IsEnabled = true; RefreshSummary();
+            if (closeAfterOperation && !exiting)
+            {
+                closeAfterOperation = false;
+                _ = Dispatcher.BeginInvoke(new Action(async () => await QuitAsync()));
+            }
+        }
     }
 
     private async void AddClick(object sender, RoutedEventArgs e) => await EditAsync(null);
@@ -391,21 +399,23 @@ public partial class MainWindow : Window
     {
         if (exiting) return;
         e.Cancel = true;
-        if (!busy && settings.Background) { Hide(); return; }
-        if (!busy) Dispatcher.BeginInvoke(new Action(async () => await QuitAsync()));
-        else Restore();
+        if (settings.KeepMountedOnClose) { Hide(); return; }
+        Dispatcher.BeginInvoke(new Action(async () => await QuitAsync()));
     }
     private async void QuitClick(object sender, RoutedEventArgs e) => await QuitAsync();
     private async Task QuitAsync()
     {
-        if (busy) { Restore(); return; }
+        if (busy) { closeAfterOperation = true; Restore(); return; }
+        reconnectTimer.Stop();
         Restore();
         await RunAsync(async () =>
         {
             wantedConnections.Clear();
-            await service.DisconnectAllAsync();
+            // Also recover/verify surviving leases before exiting; never abandon an unverified worker.
+            await service.PrepareUninstallAsync();
             FinishExit();
         }, L.T("Đã đóng."));
+        if (!exiting) reconnectTimer.Start(); // A blocked exit leaves the app available for upload recovery.
     }
     private async Task<string?> PrepareForUninstallAsync()
     {

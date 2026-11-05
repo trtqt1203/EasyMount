@@ -474,5 +474,7 @@
   "Áp dụng ngay và lưu cho lần mở sau": "Applied immediately and remembered next time",
   "Sử dụng ổ OneDrive này?": "Use this OneDrive?",
   "Xác nhận ổ OneDrive đã chọn để hoàn tất kết nối.": "Confirm the selected OneDrive to finish connecting.",
-  "Xác nhận": "Confirm"
+  "Xác nhận": "Confirm",
+  "Giữ ổ kết nối khi đóng cửa sổ": "Keep drives connected when closing the window",
+  "Mặc định tắt: đóng cửa sổ sẽ ngắt ổ an toàn và thoát. Bật để giữ ổ trong khay hệ thống.": "Off by default: closing safely disconnects drives and exits. Enable to keep drives connected in the system tray."
 }

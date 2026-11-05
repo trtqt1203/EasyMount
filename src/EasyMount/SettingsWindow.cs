@@ -95,7 +95,7 @@ public sealed class SettingsWindow : Window
   }
   if(tab==L.T("Hiệu năng"))
   {
-   Toggle(L.T("Chạy nền khi đóng cửa sổ"),L.T("Thoát hẳn bằng menu biểu tượng khay hệ thống"),options.Background,v=>options.Background=v);
+   Toggle(L.T("Giữ ổ kết nối khi đóng cửa sổ"),L.T("Mặc định tắt: đóng cửa sổ sẽ ngắt ổ an toàn và thoát. Bật để giữ ổ trong khay hệ thống."),options.KeepMountedOnClose,v=>options.KeepMountedOnClose=v);
    using var key=Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");var exe=Environment.ProcessPath??"";var enabled=string.Equals(key?.GetValue("EasyMount") as string,"\""+exe+"\"",StringComparison.OrdinalIgnoreCase);
    Toggle(L.T("Khởi động cùng Windows"),L.T("Tự mở app khi đăng nhập Windows"),enabled,v=>{using var run=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");if(v)run.SetValue("EasyMount","\""+exe+"\"");else run.DeleteValue("EasyMount",false);});
    Toggle(L.T("Cache metadata ổ đĩa"),L.T("Giữ số liệu dung lượng trong bộ nhớ"),options.CacheMetadata,v=>options.CacheMetadata=v,()=>{var b=new Button{Content=L.T("Xóa cache"),FontSize=11,Padding=new Thickness(8,4,8,4),MinHeight=28};b.Click+=(_,_)=>{if(MessageBox.Show(this,L.T("Xóa metadata dung lượng? Cache file chờ tải lên được giữ nguyên."),"EasyMount",MessageBoxButton.YesNo)==MessageBoxResult.Yes){clearCache();Changed();}};return Child(L.T("Metadata trong bộ nhớ"),b);});

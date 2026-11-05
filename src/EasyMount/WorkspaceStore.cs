@@ -55,7 +55,8 @@ public sealed class DesktopSettings
  public bool NotifyCapacity { get; set; } = true;
  public int CapacityThreshold { get; set; } = 90;
  public bool Sound { get; set; }
- public bool Background { get; set; } = true;
+ // Legacy Background=true was the default, not an explicit choice to keep drives mounted.
+ public bool KeepMountedOnClose { get; set; }
  public bool CacheMetadata { get; set; } = true;
  public bool Logging { get; set; } = true;
  public string LogLevel { get; set; } = "INFO";

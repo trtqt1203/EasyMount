@@ -17,6 +17,15 @@ void Check(bool value, string description)
     Console.WriteLine("PASS " + description);
     passed++;
 }
+var closeSettingsPath = Path.Combine(temporaryRoot, "close-settings.json");
+Check(!DesktopSettings.Load(closeSettingsPath).KeepMountedOnClose, "new settings close and unmount instead of silently running in the tray");
+File.WriteAllText(closeSettingsPath, "{\"Background\":true,\"Language\":\"vi\",\"Theme\":\"light\",\"AutoConnect\":false}");
+var closeSettings = DesktopSettings.Load(closeSettingsPath);
+Check(!closeSettings.KeepMountedOnClose && closeSettings.Language == "vi" && closeSettings.Theme == "light" && !closeSettings.AutoConnect,
+    "legacy background default does not opt users into keeping mounts; unrelated preferences survive");
+closeSettings.KeepMountedOnClose = true;
+closeSettings.Save(closeSettingsPath);
+Check(DesktopSettings.Load(closeSettingsPath).KeepMountedOnClose, "keeping mounts on close requires a persisted explicit opt-in");
 foreach (var sample in new[] {
     (Json: "{\"mail\":\"user@example.com\"}", Email: "user@example.com"),
     (Json: "{\"mail\":null,\"userPrincipalName\":\"member@example.com\"}", Email: "member@example.com"),
