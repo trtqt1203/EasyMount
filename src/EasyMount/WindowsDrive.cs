@@ -17,6 +17,15 @@ internal static class WindowsDrive
     private static extern void NotifyFolder(int change, uint flags, IntPtr item1, IntPtr item2);
     [DllImport("shell32.dll")]
     private static extern int SHGetKnownFolderIDList(in Guid folder, uint flags, IntPtr token, out IntPtr item);
+    [StructLayout(LayoutKind.Sequential)]
+    private struct VolumeChange
+    {
+        public uint Size, DeviceType, Reserved, UnitMask;
+        public ushort Flags;
+    }
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern IntPtr SendMessageTimeoutW(IntPtr window, uint message, UIntPtr action,
+        ref VolumeChange volume, uint flags, uint timeout, out UIntPtr result);
 
     public static string? Connection(string letter)
     {
@@ -39,6 +48,10 @@ internal static class WindowsDrive
             if (result is not (0 or 2250)) throw new IOException($"Windows chưa bỏ ánh xạ {letter} (mã {result}). Thử ngắt lại sau khi đóng Explorer đang dùng ổ.");
         }
         SHChangeNotify(0x80, 0x1005, letter + "\\", IntPtr.Zero);
+        // Invalidate Explorer's cached network-drive mask, not just its tree item.
+        var volume = new VolumeChange { Size = (uint)Marshal.SizeOf<VolumeChange>(), DeviceType = 2,
+            UnitMask = 1u << (char.ToUpperInvariant(letter[0]) - 'A'), Flags = 2 };
+        SendMessageTimeoutW(new IntPtr(0xffff), 0x219, new UIntPtr(0x8004), ref volume, 2, 1000, out _);
         // A drive-path notification alone can leave ghost entries in This PC.
         // Refresh its namespace too, as WinFsp's mount removal does.
         var computerFolder = new Guid("0ac0837c-bbf8-452a-850d-79d08e667ca7");
