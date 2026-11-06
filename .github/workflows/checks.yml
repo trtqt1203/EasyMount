@@ -26,6 +26,9 @@ jobs:
           python-version: '3.13.9'
       - name: Build desktop source
         run: dotnet build src/EasyMount/EasyMount.csproj -c Release
+      - name: Signing preparation and unsigned-release rejection
+        shell: pwsh
+        run: ./tests/check-signing.ps1 -UnsignedAppPath src/EasyMount/bin/Release/net10.0-windows/EasyMount.exe
       - name: Localization and themes
         run: dotnet run --project tests/Localization.Checks.csproj
       - name: Short website gateway boundaries

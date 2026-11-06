@@ -1,0 +1,198 @@
+name: Sign Windows release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: code-signing-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  sign:
+    runs-on: windows-2025
+    environment: code-signing
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+      SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+      SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+      SIGNPATH_CERTIFICATE_THUMBPRINT: ${{ vars.SIGNPATH_CERTIFICATE_THUMBPRINT }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Require approved configuration and exact release tag
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          OAUTH_CLIENTS_JSON: ${{ secrets.OAUTH_CLIENTS_JSON }}
+        run: |
+          foreach ($name in @('SIGNPATH_ORGANIZATION_ID','SIGNPATH_PROJECT_SLUG','SIGNPATH_SIGNING_POLICY_SLUG','SIGNPATH_CERTIFICATE_THUMBPRINT','SIGNPATH_API_TOKEN','OAUTH_CLIENTS_JSON')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw "Missing approved configuration: $name" }
+          }
+          if ($env:GITHUB_REF_TYPE -ne 'tag') { throw 'Run this workflow from a reviewed version tag, never a branch.' }
+          $info = (Select-Xml Directory.Build.props -XPath '/Project/PropertyGroup/InformationalVersion').Node.InnerText
+          $version = (Select-Xml Directory.Build.props -XPath '/Project/PropertyGroup/Version').Node.InnerText
+          if ($env:GITHUB_REF_NAME -cne "v$info") { throw 'Tag and application version do not match.' }
+          "APP_VERSION=$version" >> $env:GITHUB_ENV
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - name: Build engine and application from source
+        env:
+          OAUTH_CLIENTS_JSON: ${{ secrets.OAUTH_CLIENTS_JSON }}
+        run: |
+          $identity = Join-Path $env:RUNNER_TEMP 'oauth-clients.json'
+          try {
+            [IO.File]::WriteAllText($identity, $env:OAUTH_CLIENTS_JSON)
+            ./build.ps1 -OAuthClientsPath $identity
+          } finally {
+            Remove-Item -LiteralPath $identity -Force -ErrorAction SilentlyContinue
+          }
+          dotnet run --project tests/EasyMount.Checks.csproj -- work/easymount-build/app/tools/rclone.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Core checks failed.' }
+          dotnet run --project tests/Localization.Checks.csproj
+          if ($LASTEXITCODE -ne 0) { throw 'Localization checks failed.' }
+          $productVersion = (Get-Item work/easymount-build/app/EasyMount.exe).VersionInfo.ProductVersion
+          "APP_PRODUCT_VERSION=$productVersion" >> $env:GITHUB_ENV
+      - name: Upload unsigned payload
+        id: payload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unsigned-payload
+          path: |
+            work/easymount-build/app/EasyMount.exe
+            work/easymount-build/app/EasyMount.dll
+          if-no-files-found: error
+          retention-days: 7
+      - name: Request payload signing (manual approval in SignPath)
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ env.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ env.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: payload
+          github-artifact-id: ${{ steps.payload.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: work/signed-payload
+          parameters: |
+            version: ${{ toJSON(env.APP_PRODUCT_VERSION) }}
+      - name: Verify application signatures and build MSI
+        run: |
+          ./tools/verify-release-signature.ps1 -Path work/signed-payload/EasyMount.exe,work/signed-payload/EasyMount.dll -CertificateThumbprint $env:SIGNPATH_CERTIFICATE_THUMBPRINT
+          Copy-Item work/signed-payload/EasyMount.exe,work/signed-payload/EasyMount.dll work/easymount-build/app/ -Force
+          ./build-setup.ps1 -SkipAppBuild -MsiOnly
+      - name: Upload unsigned msi
+        id: msi
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unsigned-msi
+          path: |
+            work/easymount-installer/EasyMount-${{ env.APP_VERSION }}-x64.msi
+          if-no-files-found: error
+          retention-days: 7
+      - name: Request msi signing (manual approval in SignPath)
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ env.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ env.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: msi
+          github-artifact-id: ${{ steps.msi.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: work/signed-msi
+          parameters: |
+            version: ${{ toJSON(env.APP_VERSION) }}
+      - name: Verify MSI and build bundle with signed MSI
+        run: |
+          $msi = (Resolve-Path "work/signed-msi/EasyMount-$env:APP_VERSION-x64.msi").Path
+          ./tools/verify-release-signature.ps1 -Path $msi -CertificateThumbprint $env:SIGNPATH_CERTIFICATE_THUMBPRINT
+          $wix = './work/easymount-installer/wix/wix.exe'
+          $root = (Get-Location).Path
+          & $wix build installer/Bundle.wxs -arch x64 -ext WixToolset.BootstrapperApplications.wixext -ext WixToolset.Util.wixext -d "AppVersion=$env:APP_VERSION" -d "ProjectDir=$root" -d "WinFspMsi=$root/work/easymount-installer/winfsp-2.1.25156.msi" -d "AppMsi=$msi" -d "LicenseRtf=$root/work/easymount-installer/License.rtf" -pdbtype none -o "work/EasyMount-$env:APP_VERSION-Setup.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'Bundle build failed.' }
+          & $wix burn detach "work/EasyMount-$env:APP_VERSION-Setup.exe" -engine work/EasyMount-engine.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Burn engine extraction failed.' }
+      - name: Upload unsigned engine
+        id: engine
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unsigned-engine
+          path: |
+            work/EasyMount-engine.exe
+          if-no-files-found: error
+          retention-days: 7
+      - name: Request engine signing (manual approval in SignPath)
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ env.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ env.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: engine
+          github-artifact-id: ${{ steps.engine.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: work/signed-engine
+          parameters: |
+            version: ${{ toJSON(env.APP_VERSION) }}
+      - name: Verify and reattach signed Burn engine
+        run: |
+          ./tools/verify-release-signature.ps1 -Path work/signed-engine/EasyMount-engine.exe -CertificateThumbprint $env:SIGNPATH_CERTIFICATE_THUMBPRINT
+          New-Item -ItemType Directory -Force work/final | Out-Null
+          & ./work/easymount-installer/wix/wix.exe burn reattach "work/EasyMount-$env:APP_VERSION-Setup.exe" -engine work/signed-engine/EasyMount-engine.exe -o "work/final/EasyMount-$env:APP_VERSION-Setup.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'Signed Burn engine reattachment failed.' }
+      - name: Upload unsigned setup
+        id: setup
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unsigned-setup
+          path: |
+            work/final/EasyMount-${{ env.APP_VERSION }}-Setup.exe
+          if-no-files-found: error
+          retention-days: 7
+      - name: Request setup signing (manual approval in SignPath)
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ env.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ env.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: setup
+          github-artifact-id: ${{ steps.setup.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: work/signed-setup
+          parameters: |
+            version: ${{ toJSON(env.APP_VERSION) }}
+      - name: Verify final installer before making it downloadable
+        run: |
+          $setup = "work/signed-setup/EasyMount-$env:APP_VERSION-Setup.exe"
+          ./tools/verify-release-signature.ps1 -Path $setup -CertificateThumbprint $env:SIGNPATH_CERTIFICATE_THUMBPRINT
+          ./tests/check-installer.ps1 -SetupPath $setup -WixPath work/easymount-installer/wix/wix.exe
+          & ./work/easymount-installer/wix/wix.exe burn detach $setup -engine work/final-engine.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot verify embedded signed Burn engine.' }
+          ./tools/verify-release-signature.ps1 -Path work/final-engine.exe -CertificateThumbprint $env:SIGNPATH_CERTIFICATE_THUMBPRINT
+          & ./work/easymount-installer/wix/wix.exe burn extract $setup -o work/final-content -oba work/final-ba
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect final installer payloads.' }
+          $embeddedMsi = @(Get-ChildItem work/final-content -Recurse -File -Filter "EasyMount-$env:APP_VERSION-x64.msi")
+          if ($embeddedMsi.Count -ne 1) { throw 'Final installer must contain exactly one EasyMount MSI.' }
+          ./tools/verify-release-signature.ps1 -Path $embeddedMsi[0].FullName -CertificateThumbprint $env:SIGNPATH_CERTIFICATE_THUMBPRINT
+          if ((Get-FileHash $embeddedMsi[0].FullName).Hash -ne (Get-FileHash "work/signed-msi/EasyMount-$env:APP_VERSION-x64.msi").Hash) { throw 'Final installer MSI differs from the approved signed MSI.' }
+          $hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $([IO.Path]::GetFileName($setup))" | Set-Content "$setup.sha256" -Encoding ascii
+      - name: Save verified signed installer for release review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-signed-installer
+          path: work/signed-setup/*
+          if-no-files-found: error
+          retention-days: 14

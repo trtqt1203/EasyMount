@@ -4,6 +4,12 @@ Bản ứng viên đang được kiểm thử, chưa phải bản Stable công k
 
 Ứng dụng miễn phí cho Windows x64: gắn từng tài khoản cloud hoặc gộp nhiều tài khoản thành một ổ trong File Explorer. Mã ứng dụng được phát hành theo MIT.
 
+## Code signing policy
+
+Signing preparation and the current unsigned status are documented in the
+[Code signing policy](docs/CODE-SIGNING-POLICY.md). SignPath Foundation approval
+is pending application; no free signing certificate has been granted yet.
+
 ## Cài đặt
 
 Mục tiêu hỗ trợ chính là Windows 11 x64. Khi có bản phát hành được chấp nhận, dùng Setup từ GitHub Releases được liên kết trên [website chính thức](https://easymount.pages.dev/). Hiện API chưa công bố bản tải xuống Stable. Bộ cài ứng viên chứa runtime, engine và WinFsp; nếu Windows yêu cầu khởi động lại để hoàn tất driver, thực hiện trước khi kết nối ổ.

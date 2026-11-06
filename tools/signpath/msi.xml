@@ -1,0 +1,6 @@
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters><parameter name="version" required="true"/></parameters>
+  <zip-file>
+    <msi-file path="EasyMount-${version}-x64.msi" author="EasyMount"><authenticode-sign/></msi-file>
+  </zip-file>
+</artifact-configuration>

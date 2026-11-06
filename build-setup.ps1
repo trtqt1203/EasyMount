@@ -4,6 +4,7 @@ param(
     [string]$WixPath = 'wix',
     [string]$WorkDirectory = (Join-Path (Get-Location) 'work\easymount-installer'),
     [switch]$SkipAppBuild,
+    [switch]$MsiOnly,
     [string]$GoPath = 'go',
     [string]$EnginePath = '',
     [string]$OAuthClientsPath = (Join-Path $PSScriptRoot 'oauth-clients.json'),
@@ -97,6 +98,10 @@ $appMsi = Join-Path $workRoot "EasyMount-$appVersion-x64.msi"
 $setup = Join-Path $projectRoot "EasyMount-$appVersion-Setup.exe"
 & $wix build (Join-Path $projectRoot 'installer\Package.wxs') -arch x64 -d "AppVersion=$appVersion" -d "ProjectDir=$projectRoot" -d "PayloadDir=$payload" -pdbtype none -o $appMsi
 if ($LASTEXITCODE -ne 0) { throw 'EasyMount MSI build failed.' }
+if ($MsiOnly) {
+    Write-Host "MSI ready for signing: $appMsi"
+    return
+}
 & $wix build (Join-Path $projectRoot 'installer\Bundle.wxs') -arch x64 -ext WixToolset.BootstrapperApplications.wixext -ext WixToolset.Util.wixext -d "AppVersion=$appVersion" -d "ProjectDir=$projectRoot" -d "WinFspMsi=$winFspMsi" -d "AppMsi=$appMsi" -d "LicenseRtf=$licenseRtf" -pdbtype none -o $setup
 if ($LASTEXITCODE -ne 0) { throw 'EasyMount bootstrapper build failed.' }
 
