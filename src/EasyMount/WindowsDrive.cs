@@ -13,6 +13,10 @@ internal static class WindowsDrive
     private static extern int WNetCancelConnection2W(string name, int flags, [MarshalAs(UnmanagedType.Bool)] bool force);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern void SHChangeNotify(int change, uint flags, string item1, IntPtr item2);
+    [DllImport("shell32.dll", EntryPoint = "SHChangeNotify")]
+    private static extern void NotifyFolder(int change, uint flags, IntPtr item1, IntPtr item2);
+    [DllImport("shell32.dll")]
+    private static extern int SHGetKnownFolderIDList(in Guid folder, uint flags, IntPtr token, out IntPtr item);
 
     public static string? Connection(string letter)
     {
@@ -35,5 +39,13 @@ internal static class WindowsDrive
             if (result is not (0 or 2250)) throw new IOException($"Windows chưa bỏ ánh xạ {letter} (mã {result}). Thử ngắt lại sau khi đóng Explorer đang dùng ổ.");
         }
         SHChangeNotify(0x80, 0x1005, letter + "\\", IntPtr.Zero);
+        // A drive-path notification alone can leave ghost entries in This PC.
+        // Refresh its namespace too, as WinFsp's mount removal does.
+        var computerFolder = new Guid("0ac0837c-bbf8-452a-850d-79d08e667ca7");
+        if (SHGetKnownFolderIDList(in computerFolder, 0, IntPtr.Zero, out var item) >= 0)
+        {
+            try { NotifyFolder(0x1000, 0x1000, item, IntPtr.Zero); }
+            finally { Marshal.FreeCoTaskMem(item); }
+        }
     }
 }
