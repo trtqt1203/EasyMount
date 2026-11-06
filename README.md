@@ -1,8 +1,14 @@
-# EasyMount — 0.7.1-beta.2 candidate
+# EasyMount — 0.7.8-beta.1
 
-Bản ứng viên đang được kiểm thử, chưa phải bản Stable công khai. App dùng .NET 10 và giao diện Windows hỗ trợ tiếng Anh/Việt, sáng/tối, workspace do người dùng tạo, tìm kiếm và lọc ổ đĩa. Website và API metadata nằm trong `web/`; file và token cloud được xử lý trên máy người dùng, không chuyển qua backend website. Trạng thái kiểm chứng nằm trong [docs/RELEASE-STATUS.md](docs/RELEASE-STATUS.md), điều kiện phát hành nằm trong [docs/RELEASE-PLAN.md](docs/RELEASE-PLAN.md).
+Bản Beta công khai, chưa phải Stable. Bộ cài EasyMount hiện chưa được ký số. App dùng .NET 10 và giao diện Windows hỗ trợ tiếng Anh/Việt, sáng/tối, workspace do người dùng tạo, tìm kiếm và lọc ổ đĩa. Website và API metadata nằm trong `web/`; file và token cloud được xử lý trên máy người dùng, không chuyển qua backend website. Trạng thái kiểm chứng nằm trong [docs/RELEASE-STATUS.md](docs/RELEASE-STATUS.md), điều kiện phát hành nằm trong [docs/RELEASE-PLAN.md](docs/RELEASE-PLAN.md).
 
 Ứng dụng miễn phí cho Windows x64: gắn từng tài khoản cloud hoặc gộp nhiều tài khoản thành một ổ trong File Explorer. Mã ứng dụng được phát hành theo MIT.
+
+## Code signing policy
+
+Signing preparation and the current unsigned status are documented in the
+[Code signing policy](docs/CODE-SIGNING-POLICY.md). SignPath Foundation approval
+is pending application; no free signing certificate has been granted yet.
 
 ## Cài đặt
 
@@ -24,7 +30,7 @@ Google Drive cần OAuth client riêng để sử dụng ổn định: client d�
 
 Bản 0.3.7 đã có OAuth client Desktop riêng của EasyMount trong `oauth-clients.json`; không cần nhập Client ID/Secret khi thêm Google Drive. File này chỉ chứa định danh ứng dụng, không chứa token, mật khẩu hoặc cấu hình tài khoản người dùng. Đây là public client của ứng dụng Desktop; không dùng client secret đi kèm như mật khẩu bảo vệ một dịch vụ máy chủ.
 
-OAuth Google hiện ở trạng thái **External / Testing**, chỉ dành cho tài khoản trong danh sách tester; tối đa 100 tester và refresh token cho quyền Drive hết hạn sau 7 ngày. Bản này chưa phải đăng nhập công khai đã được Google xét duyệt. Muốn phát hành rộng rãi cần hoàn thiện branding, trang chủ/chính sách riêng tư trên miền đã xác minh và quy trình xét duyệt phạm vi Drive. Chi tiết: `docs/OAUTH-SETUP.md`; [giới hạn Testing của Google](https://support.google.com/cloud/answer/15549945?hl=en).
+Google OAuth đã được chuyển sang Production và hồ sơ đang được Google xét duyệt theo trạng thái người quản lý cung cấp. Đây chưa phải xác nhận ứng dụng đã được phê duyệt. Giới hạn và cảnh báo của Google đối với ứng dụng chưa xác minh vẫn có thể áp dụng. Xem `docs/OAUTH-CHECKPOINT-20261106.md`.
 
 Tên remote khác nhau không bảo đảm đó là hai tài khoản thực khác nhau. Tránh cấu hình cùng một tài khoản/thư mục dưới nhiều tên rồi đưa vào cùng một ổ gộp vì dung lượng có thể bị đếm lặp.
 

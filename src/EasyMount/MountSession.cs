@@ -13,6 +13,7 @@ internal sealed record MountSession(int ProcessId, long StartTicks, string Execu
     bool ReadOnly, string Routing, int Port, string ProtectedSecret)
 {
     public static string Protect(string secret) => Convert.ToBase64String(Crypt(Encoding.UTF8.GetBytes(secret), true));
+    internal static string Unprotect(string protectedValue) => Encoding.UTF8.GetString(Crypt(Convert.FromBase64String(protectedValue), false));
     public string Secret() => Encoding.UTF8.GetString(Crypt(Convert.FromBase64String(ProtectedSecret), false));
     public bool Matches(Process process, DriveProfile profile, string routing) =>
         ProcessId == process.Id && StartTicks == process.StartTime.ToUniversalTime().Ticks &&

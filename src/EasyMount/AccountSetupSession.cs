@@ -70,6 +70,7 @@ public sealed class AccountSetupSession : IAsyncDisposable
         foreach (var arg in new[] { "--config", service.ConfigPath, "--ask-password=false", "rcd", "--rc-addr", "127.0.0.1:" + port, "--rc-no-auth=false", "--log-level", "ERROR" }) info.ArgumentList.Add(arg);
         info.Environment["RCLONE_RC_USER"] = "easymount-setup";
         info.Environment["RCLONE_RC_PASS"] = secret;
+        ConfigProtection.Apply(info, service.ConfigPath);
         process = Process.Start(info) ?? throw new InvalidOperationException("Không mở được dịch vụ đăng nhập.");
         process.StandardInput.Close();
         _ = process.StandardOutput.BaseStream.CopyToAsync(System.IO.Stream.Null);

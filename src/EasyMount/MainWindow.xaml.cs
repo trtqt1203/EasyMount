@@ -380,7 +380,20 @@ public partial class MainWindow : Window
         }
         finally { RefreshSpinner.Visibility = Visibility.Collapsed; RefreshButtonText.Text = L.T("Làm mới"); RefreshButton.IsEnabled = true; }
     }
-    private void AccountsClick(object sender, RoutedEventArgs e) => ShowSetup("Google Drive / OneDrive");
+    private async void AccountsClick(object sender, RoutedEventArgs e)
+    {
+        if (busy) return;
+        new AccountsWindow(service) { Owner = this }.ShowDialog();
+        var saved = service.LoadProfiles();
+        var validIds = saved.Select(p => p.Id).ToHashSet();
+        var changedIds = Rows.Where(row => { var next = saved.FirstOrDefault(p => p.Id == row.Profile.Id); return next is null || !row.Profile.Sources.Select(s => s.Remote).SequenceEqual(next.Sources.Select(s => s.Remote)); }).Select(row => row.Profile.Id).ToHashSet();
+        wantedConnections.RemoveWhere(id => !validIds.Contains(id) || changedIds.Contains(id));
+        foreach (var id in retryAfter.Keys.Where(id => !validIds.Contains(id)).ToArray()) retryAfter.Remove(id);
+        Rows.Clear();
+        foreach (var profile in saved) { var row = new DriveRow(profile, () => Rows.Select(r => r.Profile)); row.Update(new(profile.Id, service.IsConnected(profile.Id) ? "Connected" : "Disconnected")); Rows.Add(row); }
+        RefreshSummary();
+        await RefreshAccountLabelsAsync();
+    }
     private void GoogleClick(object sender, RoutedEventArgs e) => ShowSetup("Google Drive");
     private void OneDriveClick(object sender, RoutedEventArgs e) => ShowSetup("OneDrive");
     private bool ShowSetup(string provider)

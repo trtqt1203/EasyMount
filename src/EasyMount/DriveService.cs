@@ -53,6 +53,7 @@ public sealed class DriveService : IDisposable
         Directory.CreateDirectory(DataDirectory);
         Directory.CreateDirectory(Path.Combine(DataDirectory, "logs"));
         RclonePath = rclonePath ?? FindRclone();
+        ConfigProtection.Ensure(ConfigPath, RclonePath);
     }
 
     private static string FindRclone()
@@ -181,6 +182,7 @@ public sealed class DriveService : IDisposable
         info.ArgumentList.Add("--config");
         info.ArgumentList.Add(ConfigPath);
         foreach (var argument in args) info.ArgumentList.Add(argument);
+        ConfigProtection.Apply(info, ConfigPath);
         return info;
     }
 
@@ -252,6 +254,36 @@ public sealed class DriveService : IDisposable
             catch { /* Identity lookup must not prevent session recovery. */ }
         }
         return accounts.Select(a => a with { Email = emails.GetValueOrDefault(a.Name) }).ToList();
+    }
+
+    public static bool UsesAccount(DriveProfile profile, string name) =>
+        (profile.IsPool ? profile.Sources.Select(s => s.Remote) : new[] { profile.Remote })
+        .Any(remote => remote.Split(':')[0].Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    public async Task RemoveAccountAsync(string name)
+    {
+        AccountSetupSession.ValidateName(name);
+        if (!(await ListRemotesAsync()).Any(a => a.Name.Equals(name, StringComparison.Ordinal)))
+            throw new InvalidOperationException("Cloud account not found.");
+        var profiles = LoadProfiles();
+        var affected = profiles.Where(p => UsesAccount(p, name)).ToArray();
+        foreach (var profile in affected)
+        {
+            await DisconnectAsync(profile.Id);
+            if (File.Exists(SessionFile(profile.Id)))
+                throw new IOException("Cannot verify that the drive was disconnected safely. Keep the account and recover the session first: " + profile.Name);
+        }
+        var remaining = new List<DriveProfile>();
+        foreach (var profile in profiles)
+        {
+            if (!UsesAccount(profile, name)) { remaining.Add(profile); continue; }
+            if (!profile.IsPool) continue;
+            var sources = profile.Sources.Where(s => !s.Remote.Split(':')[0].Equals(name, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (sources.Count < 2) continue;
+            remaining.Add(new DriveProfile { Id = profile.Id, Name = profile.Name, Letter = profile.Letter, ReadOnly = profile.ReadOnly, AutoConnect = profile.AutoConnect, Remote = profile.Remote, Sources = sources });
+        }
+        SaveProfiles(remaining);
+        await RunAsync(new[] { "config", "delete", name });
     }
 
     public void SaveAccountLabel(string remote, string label)

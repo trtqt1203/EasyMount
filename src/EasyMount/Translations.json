@@ -476,5 +476,19 @@
   "Xác nhận ổ OneDrive đã chọn để hoàn tất kết nối.": "Confirm the selected OneDrive to finish connecting.",
   "Xác nhận": "Confirm",
   "Giữ ổ kết nối khi đóng cửa sổ": "Keep drives connected when closing the window",
-  "Mặc định tắt: đóng cửa sổ sẽ ngắt ổ an toàn và thoát. Bật để giữ ổ trong khay hệ thống.": "Off by default: closing safely disconnects drives and exits. Enable to keep drives connected in the system tray."
+  "Mặc định tắt: đóng cửa sổ sẽ ngắt ổ an toàn và thoát. Bật để giữ ổ trong khay hệ thống.": "Off by default: closing safely disconnects drives and exits. Enable to keep drives connected in the system tray.",
+  "Tài khoản cloud · EasyMount": "Cloud accounts · EasyMount",
+  "+ Thêm tài khoản": "+ Add account",
+  "Quản lý tài khoản đã liên kết với EasyMount.": "Manage accounts linked to EasyMount.",
+  "Đang tải tài khoản…": "Loading accounts…",
+  "Chưa có tài khoản. Chọn Thêm tài khoản để bắt đầu.": "No accounts yet. Select Add account to get started.",
+  "Xóa tài khoản": "Remove account",
+  "Xóa tài khoản khỏi EasyMount? File trên cloud sẽ được giữ nguyên.": "Remove this account from EasyMount? Files in the cloud will be kept.",
+  "tài khoản đã liên kết": "accounts linked",
+  "Xóa": "Remove",
+  " (gỡ nguồn khỏi ổ gộp)": " (remove source from pool)",
+  " (xóa ổ gộp còn dưới 2 nguồn)": " (remove pool with fewer than 2 sources)",
+  " (xóa ổ đĩa)": " (remove drive)",
+  "Xóa tài khoản này? EasyMount sẽ ngắt kết nối an toàn và cập nhật các ổ liên quan. File trên cloud được giữ nguyên.": "Remove this account? EasyMount will safely disconnect and update the affected drives. Cloud files will be kept.",
+  "Đang ngắt kết nối và xóa tài khoản…": "Disconnecting drives and removing account…"
 }

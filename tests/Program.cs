@@ -18,6 +18,41 @@ void Check(bool value, string description)
     passed++;
 }
 var closeSettingsPath = Path.Combine(temporaryRoot, "close-settings.json");
+var encryptedTemplates = Path.Combine(temporaryRoot, "encrypted-templates");
+Directory.CreateDirectory(encryptedTemplates);
+if (args.Contains("--mounts") && Process.GetProcessesByName("rclone").Length == 0)
+{
+    foreach (var fixture in new[] {
+        (Name: "mount.conf", Content: "[mount_fixture]\ntype = local\n[readonly_fixture]\ntype = drive\nscope = drive.readonly\n"),
+        (Name: "pool.conf", Content: "[pool_a]\ntype = local\n[pool_b]\ntype = local\n") })
+    {
+        var path = Path.Combine(encryptedTemplates, fixture.Name);
+        File.WriteAllText(path, fixture.Content);
+        Check(ConfigProtection.Ensure(path, rclone), "prepares encrypted mount fixture before loopback test workers start");
+    }
+}
+void UseEncryptedMountFixture(string config, string template)
+{
+    var path = Path.Combine(encryptedTemplates, template);
+    if (!File.Exists(path)) { Console.WriteLine("SKIP encrypted mount variant: existing personal workers were preserved."); return; }
+    File.Copy(path, config, true);
+    File.Copy(path + ".key", config + ".key", true);
+    Check(File.ReadAllText(config).Contains("RCLONE_ENCRYPT_V0"), "real mount acceptance uses encrypted configuration and its Windows-protected key");
+}
+if (Process.GetProcessesByName("rclone").Length == 0)
+{
+    var secureDir = Path.Combine(temporaryRoot, "secure-config"); Directory.CreateDirectory(secureDir);
+    var securePath = Path.Combine(secureDir, "rclone.conf");
+    File.WriteAllText(securePath, "[fixture]\ntype = local\n");
+    Check(ConfigProtection.Ensure(securePath, rclone), "migrates existing config using native rclone encryption");
+    Check(File.ReadAllText(securePath).Contains("RCLONE_ENCRYPT_V0") && !File.ReadAllText(securePath).Contains("[fixture]"), "encrypted config hides account sections");
+    using var secured = new DriveService(secureDir, rclone);
+    Check((await secured.ListRemotesAsync()).Any(a => a.Name == "fixture"), "Windows-protected key unlocks config after service restart");
+    var keyPath = securePath + ".key"; var protectedKey = File.ReadAllText(keyPath); File.Delete(keyPath);
+    Reject(() => ConfigProtection.Apply(new ProcessStartInfo(), securePath), typeof(IOException), "missing key blocks access without overwriting encrypted config");
+    File.WriteAllText(keyPath, protectedKey);
+}
+else Console.WriteLine("SKIP encryption migration: existing rclone workers must be stopped first.");
 Check(!DesktopSettings.Load(closeSettingsPath).KeepMountedOnClose, "new settings close and unmount instead of silently running in the tray");
 File.WriteAllText(closeSettingsPath, "{\"Background\":true,\"Language\":\"vi\",\"Theme\":\"light\",\"AutoConnect\":false}");
 var closeSettings = DesktopSettings.Load(closeSettingsPath);
@@ -304,6 +339,23 @@ try
     }
     await RejectAsync(async () => { await oauthRequest; }, typeof(InvalidOperationException), "closing setup cancels a pending OAuth callback");
     Check((await service.ListRemotesAsync()).All(r => r.Name != "oauth_fixture"), "cancelled OAuth does not leave an incomplete account in the configuration");
+    {
+        using var accountRemoval = new DriveService(Path.Combine(temporaryRoot, "account-removal"), rclone);
+        File.WriteAllText(accountRemoval.ConfigPath, "[alpha]\ntype = local\n\n[beta]\ntype = local\n\n[gamma]\ntype = local\n");
+        var single = new DriveProfile { Name = "Alpha", Letter = "M:", Remote = "alpha:" };
+        var three = new DriveProfile { Name = "Three", Letter = "N:", Sources = new() { new() { Remote = "alpha:" }, new() { Remote = "beta:" }, new() { Remote = "gamma:" } } };
+        var two = new DriveProfile { Name = "Two", Letter = "O:", Sources = new() { new() { Remote = "alpha:" }, new() { Remote = "beta:" } } };
+        accountRemoval.SaveProfiles(new[] { single, three, two });
+        var dirty = Path.Combine(accountRemoval.DataDirectory, "cache", single.Id);
+        Directory.CreateDirectory(dirty); File.WriteAllText(Path.Combine(dirty, "pending"), "unsent");
+        await RejectAsync(() => accountRemoval.RemoveAccountAsync("alpha"), typeof(IOException), "account removal preserves unverified cached writes");
+        Check((await accountRemoval.ListRemotesAsync()).Any(a => a.Name == "alpha") && accountRemoval.LoadProfiles().Count == 3, "failed removal preserves account and drive configurations");
+        File.Delete(Path.Combine(dirty, "pending"));
+        await accountRemoval.RemoveAccountAsync("alpha");
+        var remaining = accountRemoval.LoadProfiles();
+        Check(remaining.Count == 1 && remaining[0].Name == "Three" && remaining[0].Sources.Select(s => s.Remote).SequenceEqual(new[] { "beta:", "gamma:" }), "account removal deletes single and undersized pool while retaining remaining pool sources");
+        Check((await accountRemoval.ListRemotesAsync()).All(a => a.Name != "alpha"), "account removal deletes only the selected account");
+    }
     }
     else Console.WriteLine("SKIP 3 OAuth callback checks: port 53682 is in use; an existing user's login is preserved.");
     if (service.HasWinFsp && args.Contains("--mounts"))
@@ -315,6 +367,7 @@ try
         var first = new DriveService(mountRoot, rclone);
         Directory.CreateDirectory(mountRoot);
         File.WriteAllText(first.ConfigPath, "[mount_fixture]\ntype = local\n" + "[readonly_fixture]\ntype = drive\nscope = drive.readonly\n");
+        UseEncryptedMountFixture(first.ConfigPath, "mount.conf");
         mountedProfile.Remote += localRoot.Replace('\\', '/');
         first.SaveProfiles(new[] { mountedProfile });
         var onlyRead = new DriveProfile { Name = "readonly auth", Remote = "readonly_fixture:", Letter = mountLetter, ReadOnly = false };
@@ -380,6 +433,7 @@ try
         var secondSource = Path.Combine(temporaryRoot, "priority two"); Directory.CreateDirectory(secondSource);
         using var pooled = new DriveService(poolRoot, rclone);
         File.WriteAllText(pooled.ConfigPath, "[pool_a]\ntype = local\n[pool_b]\ntype = local\n");
+        UseEncryptedMountFixture(pooled.ConfigPath, "pool.conf");
         var drive = "ZYXWVUT".Select(c => c + ":").First(l => !DriveInfo.GetDrives().Any(d => d.Name.StartsWith(l)));
         var actualPool = new DriveProfile { Name = "Pool fixture", Letter = drive, Sources = new() {
             new() { Remote = "pool_a:" + firstSource.Replace('\\', '/'), LimitBytes = 1024 },

@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../src/EasyMount/ConfigProtection.cs" Link="ConfigProtection.cs" />
     <Compile Remove="LocalizationChecks.cs" />
     <Compile Include="../src/EasyMount/WorkspaceStore.cs" Link="WorkspaceStore.cs" />
     <Compile Include="../src/EasyMount/WindowsDrive.cs" Link="WindowsDrive.cs" />

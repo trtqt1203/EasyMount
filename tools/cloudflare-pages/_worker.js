@@ -41,6 +41,12 @@ export default {
     try {
       const upstream = await fetch(target, {method: request.method, headers, body, redirect: 'manual'});
       const response = new Response(upstream.body, upstream);
+      response.headers.set('Strict-Transport-Security', 'max-age=86400');
+      response.headers.set('X-Content-Type-Options', 'nosniff');
+      response.headers.set('X-Frame-Options', 'DENY');
+      response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+      response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+      response.headers.set('Content-Security-Policy', "base-uri 'self'; object-src 'none'; frame-ancestors 'none'");
       response.headers.delete('set-cookie');
       const location = response.headers.get('location');
       if (location?.startsWith(origin + '/')) {
