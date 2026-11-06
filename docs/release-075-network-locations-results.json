@@ -1,0 +1,14 @@
+{
+  "CheckedAt": "2026-11-06T08:26:12.2861899+07:00",
+  "InstalledVersion": "0.7.5-beta.1+55da6c406b82ebb2d89a75b6182eadff0df41575",
+  "SetupExitCode": 0,
+  "ProfilesUnchanged": true,
+  "SHA256": "D5AE5AB96FAE14D3AEE2EBCD0E3A905DF99C3C255F75B97089808E10EEEF7D06",
+  "RemainingDriveLetters": [],
+  "AppProcesses": 0,
+  "WorkerProcesses": 0,
+  "NativeFixtureAppearedAndDisappearedWithoutF5": true,
+  "FiveGoogleEntriesObservedBeforeShutdown": true,
+  "ThisPCMainListCleanAfterCloudShutdown": true,
+  "NavigatingAwayAndBackStillClean": true
+}
